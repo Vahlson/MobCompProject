@@ -34,16 +34,24 @@ class _MyHomePageState extends State<MyHomePage> {
   final MapController _mapController = MapController();
   late Stream<MapEvent> _mapStream;
   late GeoMap geomap;
-  Color selectedColor = Colors.black;
+  Color selectedColor = Colors.blue;
 
   initMap(){
     _mapStream = _mapController.mapEventStream;
     geomap = GeoMap(_mapController);
+
+    //geomap.populateGrid();
+
+    //Checks for user taps
     _mapStream.listen((event) {
       if(event.source == MapEventSource.tap) {
         MapEventTap tap = event as MapEventTap;
         setState(() {
           geomap.addPolygon(tap.tapPosition, selectedColor);
+        });
+      } else {
+        setState(() {
+          geomap.populateGrid();
         });
       }
     });
