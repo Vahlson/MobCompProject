@@ -40,7 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _mapStream = _mapController.mapEventStream;
     geomap = GeoMap(_mapController);
 
-    //geomap.populateGrid();
+    geomap.initGeoMap();
 
     //Checks for user taps
     _mapStream.listen((event) {
@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
         });
       } else {
         setState(() {
-          geomap.populateGrid();
+          geomap.onMapMove();
         });
       }
     });

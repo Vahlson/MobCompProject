@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dart_geohash/dart_geohash.dart';
+import 'package:location/location.dart';
 import 'coloredTile.dart';
 
 class GeoMap {
@@ -19,17 +20,53 @@ class GeoMap {
   List<Polyline> _gridY = [];
 
   //Half a square
-  double _lngDiff = 0.00017185; //Might overlap, original was: 0.00017167
-  double _latDiff = 0.00017185 / 2;
+  final double _lngDiff = 0.00017185; //Might overlap, original was: 0.00017167
+  final double _latDiff = 0.00017185 / 2;
 
-  void addTile(LatLng latlng, Colors color){
-    //tiles.add(...)
+  LatLng userPosition = LatLng(0, 0);
+
+  double zoom = 0;
+
+  Future<void> initGeoMap() async {
+    //Location
+    Location location = Location();
+
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return;
+      }
+    }
+
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    location.onLocationChanged.listen((LocationData userLocation) {
+      userPosition = LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
+      _mapController.move(userPosition,  _mapController.zoom); //We don't want this. Should only center when we start the application
+    });
+
+    //Map
+    onMapMove();
   }
 
   LatLng getGeoCenter(LatLng latlng){
     String geohash = _geoHasher.encode(latlng.longitude, latlng.latitude, precision: 8);
     List<double> geohashLatlng = _geoHasher.decode(geohash);
     return LatLng(geohashLatlng[1], geohashLatlng[0]);
+  }
+
+  void addTile(LatLng latlng, Colors color){
+    //tiles.add(...)
   }
 
   void addPolygon(LatLng latlng, Color color) {
@@ -55,8 +92,14 @@ class GeoMap {
     );
   }
 
+  void onMapMove() {
+    zoom = _mapController.zoom;
+
+    populateGrid();
+  }
+
   void populateGrid() {
-    if(_mapController.zoom >= 17){
+    if(zoom >= 17){
       LatLngBounds border = _mapController.bounds ?? LatLngBounds(LatLng(0, 0), LatLng(0, 0));
       double left = border.west;
       double right  = border.east;
@@ -110,10 +153,33 @@ class GeoMap {
     }
   }
 
+  List<Marker> userMarker() {
+    double outer = (zoom >= 16) ? 5 : 2;
+    double inner = (zoom >= 16) ? 20 : 7;
+    double size = outer + inner;
+    return [Marker(point: userPosition,
+        width: size,
+        height: size,
+        builder: (context) => AnimatedContainer(
+          width: inner,
+          height: inner,
+          decoration: BoxDecoration(
+              color: Colors.black,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white,
+                width: outer,
+                strokeAlign: StrokeAlign.outside,
+              )
+          ), duration: const Duration(milliseconds: 500),
+        )
+    )];
+  }
+
   Widget showMap() {
     return FlutterMap(
       options: MapOptions(
-        center: LatLng(57.70677670633015, 11.936813840131594),
+        center: userPosition,
         zoom: 18,
         maxZoom: 22,
       ),
@@ -140,6 +206,11 @@ class GeoMap {
         PolylineLayer(
           polylineCulling: false,
           polylines: _gridX + _gridY,
+        ),
+
+        //Mark user position
+        MarkerLayer(
+          markers: userMarker(),
         ),
       ],
     );
