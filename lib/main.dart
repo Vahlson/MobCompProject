@@ -1,7 +1,9 @@
+import 'package:artmap/DatabaseCommunicator.dart';
 import 'package:flutter/material.dart';
+import 'model/Model.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -49,6 +51,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  late DatabaseCommunicator db;
 
   void _incrementCounter() {
     setState(() {
@@ -59,6 +62,15 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
     });
+  }
+
+  @override
+  void initState() {
+    db = DatabaseCommunicator();
+    db.initFirebase();
+
+    // TODO: implement initState
+    super.initState();
   }
 
   @override
@@ -106,7 +118,11 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () {
+          User u = User();
+          db.createNewUser();
+          //db.setUser(u);
+        },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
