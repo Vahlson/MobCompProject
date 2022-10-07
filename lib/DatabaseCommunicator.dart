@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'model/Model.dart';
 
@@ -9,12 +10,18 @@ import 'model/Model.dart';
 //https://firebase.google.com/docs/database/flutter/start
 //https://firebase.google.com/docs/database/flutter/structure-data
 class DatabaseCommunicator {
-  //TODO maybe initialize on constructor.
+  late final secureLocalStorage;
+
+  DatabaseCommunicator() {
+    secureLocalStorage = FlutterSecureStorage();
+  }
 
   Future<void> initFirebase() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    _initUser();
   }
 
   //Overwrites all data at specified location
@@ -100,7 +107,57 @@ class DatabaseCommunicator {
     //Read the data from the event.
   }
 
-  void createNewUser() async {
+  void saveUserIDLocally(String? userID) async {
+    // Write value
+    if (userID != null) {
+      await secureLocalStorage.write(key: "uID", value: userID);
+    } else {
+      print("Could not save since returned key is null");
+    }
+
+    // Read value
+    //String? value = await storage.read(key: key);
+
+    // Read all values
+    //Map<String, String> allValues = await storage.readAll();
+
+    // Delete value
+    //await storage.delete(key: key);
+
+    // Delete all
+    //await storage.deleteAll();
+  }
+
+  Future<String?> getLocalUserID() async {
+    // Read value
+    String? value = await secureLocalStorage.read(key: "uID");
+
+    return value;
+  }
+
+  Future<void> clearLocalSafeStorage() async {
+    // Read value
+    await secureLocalStorage.deleteAll();
+  }
+
+//Make it so that android is using EncryptedSharedPreferenses
+  AndroidOptions _getAndroidOptions() => const AndroidOptions(
+        encryptedSharedPreferences: true,
+      );
+
+  void _initUser() async {
+    _getAndroidOptions();
+    String? userID = await getLocalUserID();
+    if (userID == null) {
+      String? generatedKey = await _createNewUser();
+      saveUserIDLocally(generatedKey);
+    } else {
+      //We have the ID locally, make sure it exists in the database as well?
+
+    }
+  }
+
+  Future<String?> _createNewUser() async {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref().child("Users");
 
@@ -114,14 +171,19 @@ class DatabaseCommunicator {
       'groups': "",
     };
 
-    //User newUser = User(name, newPostKey);
     // Write the new post's data simultaneously in the posts list and the
     // user's post list.
     final Map<String, Map> updates = {};
     updates['/Users/$newPostKey'] = postData;
     //updates['/user-posts/$uid/$newPostKey'] = postData;
+    FirebaseDatabase.instance.ref().update(updates).then((_) {
+      // Data saved successfully!
+    }).catchError((error) {
+      // The write failed...
+    });
 
-    return FirebaseDatabase.instance.ref().update(updates);
+    //return FirebaseDatabase.instance.ref().update(updates);
+    return newPostKey;
   }
 
 /*
