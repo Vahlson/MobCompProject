@@ -76,7 +76,20 @@ class _MyHomePageState extends State<MyHomePage> {
           child: geomap.showMap(),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+
+      bottomNavigationBar: BottomAppBar(
+        child: Row(
+          children: [
+            IconButton(icon: Icon(Icons.palette),
+              onPressed: () {
+              }),
+            IconButton(icon: Icon(Icons.architecture), onPressed: () {}),
+            IconButton(icon: Icon(Icons.opacity), onPressed: () {}),
+          ],
+        ),
+      ),
+
+      floatingActionButton: FloatingActionButtoncd(
         backgroundColor: selectedColor,
         onPressed: () {
           setState(() {
@@ -89,6 +102,25 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         child: const Icon(Icons.palette),
       ),
+    );
+  }
+}
+
+//void OpenBottomSheet(){
+//}
+
+class ColorSelector extends StatefulWidget {
+  const ColorSelector({Key? key}) : super(key: key);
+
+  @override
+  State<ColorSelector> createState() => _ColorSelectorState();
+}
+
+class _ColorSelectorState extends State<ColorSelector> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+
     );
   }
 }
