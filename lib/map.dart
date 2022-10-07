@@ -23,9 +23,12 @@ class GeoMap {
   final double _lngDiff = 0.00017185; //Might overlap, original was: 0.00017167
   final double _latDiff = 0.00017185 / 2;
 
-  LatLng userPosition = LatLng(0, 0);
+  LatLng _userPosition = LatLng(0, 0);
 
-  double zoom = 0;
+  double _zoom = 0;
+
+  List<Polygon> _drawableArea = [];
+  late LatLngBounds _drawableBounds;
 
   Future<void> initGeoMap() async {
     //Location
@@ -51,29 +54,31 @@ class GeoMap {
     }
 
     location.onLocationChanged.listen((LocationData userLocation) {
-      userPosition = LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
-      _mapController.move(userPosition,  _mapController.zoom); //We don't want this. Should only center when we start the application
+      _userPosition = LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
+      _mapController.move(_userPosition,  _mapController.zoom); //We don't want this. Should only center when we start the application
     });
 
     //Map
     onMapMove();
   }
 
-  LatLng getGeoCenter(LatLng latlng){
+  LatLng _getGeoCenter(LatLng latlng){
     String geohash = _geoHasher.encode(latlng.longitude, latlng.latitude, precision: 8);
     List<double> geohashLatlng = _geoHasher.decode(geohash);
     return LatLng(geohashLatlng[1], geohashLatlng[0]);
   }
 
-  void addTile(LatLng latlng, Colors color){
-    //tiles.add(...)
+  void addTile(LatLng latlng, Color color){
+    if(_drawableBounds.contains(latlng)){
+      _addPolygon(latlng, color);
+    }
   }
 
-  void addPolygon(LatLng latlng, Color color) {
-    _polygons.add(createPolygon(ColoredTile(getGeoCenter(latlng), color)));
+  void _addPolygon(LatLng latlng, Color color) {
+    _polygons.add(_createPolygon(ColoredTile(_getGeoCenter(latlng), color)));
   }
 
-  List<LatLng> createSquare(ColoredTile tile) {
+  List<LatLng> _createSquare(ColoredTile tile) {
     double lat = tile.position.latitude;
     double lng = tile.position.longitude;
 
@@ -83,9 +88,9 @@ class GeoMap {
       LatLng(lat - _latDiff, lng + _lngDiff),];
   }
 
-  Polygon createPolygon(ColoredTile tile) {
+  Polygon _createPolygon(ColoredTile tile) {
     return Polygon(
-      points: createSquare(tile),
+      points: _createSquare(tile),
       color: tile.color,
       isFilled: true,
       borderStrokeWidth: 0,
@@ -93,13 +98,13 @@ class GeoMap {
   }
 
   void onMapMove() {
-    zoom = _mapController.zoom;
+    _zoom = _mapController.zoom;
 
-    populateGrid();
+    _populateGrid();
   }
 
-  void populateGrid() {
-    if(zoom >= 17){
+  void _populateGrid() {
+    if(_zoom >= 17){
       LatLngBounds border = _mapController.bounds ?? LatLngBounds(LatLng(0, 0), LatLng(0, 0));
       double left = border.west;
       double right  = border.east;
@@ -113,8 +118,8 @@ class GeoMap {
       //Populate x
       for(double i = left; i <= right; i+=(_lngDiff*2)) {
         //get the center of the start and end point
-        LatLng startLatLngCenter = getGeoCenter(LatLng(top, i));
-        LatLng endLatLngCenter = getGeoCenter(LatLng(bottom, i));
+        LatLng startLatLngCenter = _getGeoCenter(LatLng(top, i));
+        LatLng endLatLngCenter = _getGeoCenter(LatLng(bottom, i));
 
         //Add half a square, so that the lines are not in the middle
         LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff), (startLatLngCenter.longitude + _lngDiff));
@@ -132,8 +137,8 @@ class GeoMap {
       //Populate y
       for(double i = bottom; i <= top; i+=(_latDiff*2)) {
         //get the center of the start and end point
-        LatLng startLatLngCenter = getGeoCenter(LatLng(i, left));
-        LatLng endLatLngCenter = getGeoCenter(LatLng(i, right));
+        LatLng startLatLngCenter = _getGeoCenter(LatLng(i, left));
+        LatLng endLatLngCenter = _getGeoCenter(LatLng(i, right));
 
         //Add half a square, so that the lines are not in the middle
         LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff), (startLatLngCenter.longitude - _lngDiff));
@@ -147,17 +152,21 @@ class GeoMap {
       }
 
       _gridY = newGridY;
+
+      _showDrawableArea();
     } else {
       _gridX = [];
       _gridY = [];
+      _drawableArea = [];
     }
   }
 
-  List<Marker> userMarker() {
-    double outer = (zoom >= 16) ? 5 : 2;
-    double inner = (zoom >= 16) ? 20 : 7;
+  List<Marker> _userMarker() {
+    double outer = (_zoom >= 16) ? 5 : 2;
+    double inner = (_zoom >= 16) ? 20 : 7;
     double size = outer + inner;
-    return [Marker(point: userPosition,
+
+    return [Marker(point: _userPosition,
         width: size,
         height: size,
         builder: (context) => AnimatedContainer(
@@ -176,10 +185,26 @@ class GeoMap {
     )];
   }
 
+  void _showDrawableArea() {
+    LatLng topLeftCenter = _getGeoCenter(LatLng(_userPosition.latitude + (_latDiff*4), _userPosition.longitude + (_lngDiff*4)));
+    LatLng bottomRightCenter = _getGeoCenter(LatLng(_userPosition.latitude - (_latDiff*4), _userPosition.longitude - (_lngDiff*4)));
+
+    LatLng topLeft = LatLng(topLeftCenter.latitude + _latDiff, topLeftCenter.longitude + _lngDiff);
+    LatLng bottomRight = LatLng(bottomRightCenter.latitude - _latDiff, bottomRightCenter.longitude - _lngDiff);
+
+    _drawableBounds = LatLngBounds(topLeft, bottomRight);
+
+    _drawableArea = [Polygon(
+        points: [_drawableBounds.northWest, _drawableBounds.northEast ?? LatLng(0, 0), _drawableBounds.southEast, _drawableBounds.southWest ?? LatLng(0, 0)],
+      borderColor: Colors.amber,
+      borderStrokeWidth: 2,
+    )];
+  }
+
   Widget showMap() {
     return FlutterMap(
       options: MapOptions(
-        center: userPosition,
+        center: _userPosition,
         zoom: 18,
         maxZoom: 22,
       ),
@@ -199,7 +224,7 @@ class GeoMap {
         //Colored tiles
         PolygonLayer(
           polygonCulling: false,
-          polygons: _polygons,
+          polygons: _polygons + _drawableArea,
         ),
 
         //Grid
@@ -210,7 +235,7 @@ class GeoMap {
 
         //Mark user position
         MarkerLayer(
-          markers: userMarker(),
+          markers: _userMarker(),
         ),
       ],
     );

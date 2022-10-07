@@ -47,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if(event.source == MapEventSource.tap) {
         MapEventTap tap = event as MapEventTap;
         setState(() {
-          geomap.addPolygon(tap.tapPosition, selectedColor);
+          geomap.addTile(tap.tapPosition, selectedColor);
         });
       } else {
         setState(() {
