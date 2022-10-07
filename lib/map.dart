@@ -162,8 +162,8 @@ class GeoMap {
   }
 
   List<Marker> _userMarker() {
-    double outer = (_zoom >= 16) ? 5 : 2;
-    double inner = (_zoom >= 16) ? 20 : 7;
+    double outer = (_zoom >= 17) ? 5 : 2;
+    double inner = (_zoom >= 17) ? 20 : 7;
     double size = outer + inner;
 
     return [Marker(point: _userPosition,
