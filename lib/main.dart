@@ -1,12 +1,19 @@
 import 'package:artmap/DatabaseCommunicator.dart';
+import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
 import 'model/Model.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:provider/provider.dart';
 
 import 'map.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => DatabaseCommunicator(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -40,6 +47,9 @@ class _MyHomePageState extends State<MyHomePage> {
   late GeoMap geomap;
   Color selectedColor = Colors.blue;
 
+  //Move this
+  GeoHasher _geoHasher = GeoHasher();
+
   initMap() {
     _mapStream = _mapController.mapEventStream;
     geomap = GeoMap(_mapController);
@@ -51,7 +61,12 @@ class _MyHomePageState extends State<MyHomePage> {
       if (event.source == MapEventSource.tap) {
         MapEventTap tap = event as MapEventTap;
         setState(() {
-          geomap.addPolygon(tap.tapPosition, selectedColor);
+          //Change this to just publishing tile to database
+          //geomap.addPolygon(tap.tapPosition, selectedColor);
+          Provider.of<DatabaseCommunicator>(context, listen: false).addTile(
+              selectedColor,
+              _geoHasher.encode(
+                  tap.tapPosition.longitude, tap.tapPosition.latitude));
         });
       } else {
         setState(() {
@@ -63,8 +78,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    db = DatabaseCommunicator();
-    db.initFirebase();
+    //db = DatabaseCommunicator();
+    //db.initFirebase();
 
     // TODO: implement initState
     initMap();
@@ -81,7 +96,11 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Container(
           height: 800,
-          child: geomap.showMap(),
+          child: Consumer<DatabaseCommunicator>(
+            builder: (context, dbCommunicator, child) {
+              return geomap.showMap();
+            },
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(

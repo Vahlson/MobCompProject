@@ -1,19 +1,22 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:provider/provider.dart';
 
 import 'model/Model.dart';
 
 //https://firebase.google.com/docs/flutter/setup?platform=android
 //https://firebase.google.com/docs/database/flutter/start
 //https://firebase.google.com/docs/database/flutter/structure-data
-class DatabaseCommunicator {
+class DatabaseCommunicator extends ChangeNotifier {
   late final secureLocalStorage;
 
   DatabaseCommunicator() {
     secureLocalStorage = FlutterSecureStorage();
+    initFirebase();
   }
 
   Future<void> initFirebase() async {
@@ -24,6 +27,7 @@ class DatabaseCommunicator {
     _initUser();
   }
 
+/*
   //Overwrites all data at specified location
   Future<void> setUser(User user) async {
     //String? userID = user.getUserID();
@@ -43,6 +47,7 @@ class DatabaseCommunicator {
     });
     ;
   }
+*/
 
 /*
   //Updates specified data of user.
@@ -79,11 +84,14 @@ class DatabaseCommunicator {
     databaseRef.onValue.listen((DatabaseEvent event) {
       //Do something when the data at this path changes.
       final data = event.snapshot.value;
+      //Rebuild everything that depends on the database
+      notifyListeners();
       //updateStarCount(data);
       print(data);
     });
   }
 
+/*
 //WARNING DONT USE THIS, UNLESS ABSOLUTELY NECESSARY.
   void getData(String databasePath) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
@@ -106,29 +114,17 @@ class DatabaseCommunicator {
     //final username = event.snapshot.value?.username ?? 'Anonymous';
     //Read the data from the event.
   }
-
-  void saveUserIDLocally(String? userID) async {
+*/
+  void _saveUserIDLocally(String? userID) async {
     // Write value
     if (userID != null) {
       await secureLocalStorage.write(key: "uID", value: userID);
     } else {
       print("Could not save since returned key is null");
     }
-
-    // Read value
-    //String? value = await storage.read(key: key);
-
-    // Read all values
-    //Map<String, String> allValues = await storage.readAll();
-
-    // Delete value
-    //await storage.delete(key: key);
-
-    // Delete all
-    //await storage.deleteAll();
   }
 
-  Future<String?> getLocalUserID() async {
+  Future<String?> _getLocalUserID() async {
     // Read value
     String? value = await secureLocalStorage.read(key: "uID");
 
@@ -147,10 +143,10 @@ class DatabaseCommunicator {
 
   void _initUser() async {
     _getAndroidOptions();
-    String? userID = await getLocalUserID();
+    String? userID = await _getLocalUserID();
     if (userID == null) {
       String? generatedKey = await _createNewUser();
-      saveUserIDLocally(generatedKey);
+      _saveUserIDLocally(generatedKey);
     } else {
       //We have the ID locally, make sure it exists in the database as well?
 
@@ -215,40 +211,58 @@ class DatabaseCommunicator {
 
     */
 
-/*
   //Uses transactions to change data that might get corrupted due to concurrent changes.
   //SUCH AS: editing a blot on the map.
   //It seems that a transaction can both get and post data in one go which should be CHEAPER $$$$$$ and also handles concurrency issues.
-  void paintTile(String uid, Color color) async {
-    DatabaseReference postRef = FirebaseDatabase.instance.ref("");
+  void addTile(Color color, String geohash) async {
+    FirebaseDatabase database = FirebaseDatabase.instance;
+    DatabaseReference ref = database.ref().child("Tiles");
+
+    String? userID = await _getLocalUserID();
+
+    print(color);
 
     //Create transaction with transaction handler.
-    TransactionResult result = await postRef.runTransaction((Object? post) {
+    TransactionResult result = await ref.runTransaction((Object? tiles) {
       // Ensure a post at the ref exists.
-      if (post == null) {
+      if (tiles == null) {
         return Transaction.abort();
       }
 
-      Map<String, dynamic> _post = Map<String, dynamic>.from(post as Map);
-      if (_post["texels"] is Map && _post["texels"][uid] != null) {
+      Map<String, dynamic> _tiles = Map<String, dynamic>.from(tiles as Map);
+
+      /*    final postData = {
+        '$geohash': "$color",
+      }; */
+
+      // Write the new post's data simultaneously in the posts list and the
+      // user's post list.
+      //updates['/Users/$geohash'] = lng;
+
+      _tiles["$geohash"] = "$color";
+
+      if (tiles is Map) {
         //_post["starCount"] = (_post["starCount"] ?? 1) - 1;
-        _post["texels"][uid] = null;
+        //TODO this is where we need to add to the correct geohashed location.
+
       } else {
         //_post["starCount"] = (_post["starCount"] ?? 0) + 1;
-        if (!_post.containsKey("texels")) {
-          _post["texels"] = {};
-        }
-        _post["texels"][uid] = true;
+        /* if (!_post.containsKey("lat")) {
+          _post["lat"] = {};
+        } */
+        //_post["texels"][uid] = true;
       }
 
       // Return the new data.
-      return Transaction.success(_post);
+      return Transaction.success(_tiles);
     }
+
         //, applyLocally: false  USE this if we don't want events raised on each transaction function update but only on completion.
         );
 
     print('Committed? ${result.committed}'); // true / false
     print('Snapshot? ${result.snapshot}'); // DataSnapshot
+
 /* 
     if (user !== null) {
     return Transaction.abort();
@@ -266,6 +280,4 @@ class DatabaseCommunicator {
     updates["user-posts/$key/starCount"] = ServerValue.increment(1);
     return FirebaseDatabase.instance.ref().update(updates);
   }
-
-  */
 }
