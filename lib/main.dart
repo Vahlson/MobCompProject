@@ -63,14 +63,17 @@ class _MyHomePageState extends State<MyHomePage> {
     _mapStream.listen((event) {
       if (event.source == MapEventSource.tap) {
         MapEventTap tap = event as MapEventTap;
-        setState(() {
-          //Change this to just publishing tile to database
+        //setState(() {
+        //Change this to just publishing tile to database
+        if (geomap.isValidTilePosition(
+            tap.tapPosition.latitude, tap.tapPosition.longitude)) {
           Provider.of<DatabaseCommunicator>(context, listen: false).addTile(
               selectedColor,
               _geoHasher.encode(
                   tap.tapPosition.longitude, tap.tapPosition.latitude,
                   precision: 8));
-        });
+        }
+        //});
       } else {
         setState(() {
           geomap.onMapMove();
