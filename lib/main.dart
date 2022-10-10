@@ -10,13 +10,19 @@ import 'map.dart';
 
 void main() {
   Model model = Model();
+  DatabaseCommunicator dbCom = DatabaseCommunicator(model);
 
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => DatabaseCommunicator(model),
-      child: const MyApp(),
-    ),
-  );
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(
+        create: (context) => MapChangeNotifier(dbCom),
+      ),
+      ChangeNotifierProvider(
+        create: (context) => BlueprintsChangeNotifier(dbCom),
+      ),
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -44,7 +50,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-  late DatabaseCommunicator db;
+  late MapChangeNotifier mapNotifier;
   final MapController _mapController = MapController();
   late Stream<MapEvent> _mapStream;
   late GeoMap geomap;
@@ -67,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
         //Change this to just publishing tile to database
         if (geomap.isValidTilePosition(
             tap.tapPosition.latitude, tap.tapPosition.longitude)) {
-          Provider.of<DatabaseCommunicator>(context, listen: false).addTile(
+          Provider.of<MapChangeNotifier>(context, listen: false).addTile(
               selectedColor,
               _geoHasher.encode(
                   tap.tapPosition.longitude, tap.tapPosition.latitude,
@@ -82,6 +88,10 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  /* void initDatabase() async{
+    await Provider.of<DatabaseCommunicator>(context, listen: false).addTile
+  } */
+
   void setUpFirebase() async {
     await Firebase.initializeApp();
   }
@@ -94,8 +104,16 @@ class _MyHomePageState extends State<MyHomePage> {
     // TODO: implement initState
     initMap();
 
+    initDatabase();
+
     super.initState();
     //setUpFirebase();
+  }
+
+  void initDatabase() async {
+    await Provider.of<MapChangeNotifier>(context, listen: false).initialize();
+    await Provider.of<BlueprintsChangeNotifier>(context, listen: false)
+        .initialize();
   }
 
   @override
@@ -107,9 +125,9 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Container(
           height: 800,
-          child: Consumer<DatabaseCommunicator>(
-            builder: (context, dbCommunicator, child) {
-              return geomap.showMap(dbCommunicator.model);
+          child: Consumer<MapChangeNotifier>(
+            builder: (context, changeNotifier, child) {
+              return geomap.showMap(changeNotifier.dbCom.model);
             },
           ),
         ),
