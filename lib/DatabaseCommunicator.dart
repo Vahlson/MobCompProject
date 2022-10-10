@@ -48,7 +48,7 @@ class BlueprintsChangeNotifier extends ChangeNotifier {
     DatabaseReference newTileRef = ref.child(geohash);
     //print("newtile: " + newTileRef.path);
 
-    await newTileRef.set({"r": color.red, "b": color.green, "g": color.blue});
+    await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
   }
 }
 
@@ -91,7 +91,7 @@ class MapChangeNotifier extends ChangeNotifier {
     DatabaseReference newTileRef = ref.child(geohash);
     //print("newtile: " + newTileRef.path);
 
-    await newTileRef.set({"r": color.red, "b": color.green, "g": color.blue});
+    await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
   }
 }
 
