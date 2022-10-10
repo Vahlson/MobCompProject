@@ -33,7 +33,7 @@ class ColoredTile {
   ColoredTile.fromMap(String geohash, Map<String, dynamic> data) {
     color = Color.fromRGBO(data["r"], data["g"], data["b"], 1);
     //color = Color.fromRGBO(1, 1, 1, 1);
-    //TODO decode geohash
+    //Decode geohash
     GeoHash g = GeoHash(geohash);
     position = LatLng(g.latitude(), g.longitude());
   }

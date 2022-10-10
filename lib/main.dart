@@ -10,6 +10,7 @@ import 'map.dart';
 
 void main() {
   Model model = Model();
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => DatabaseCommunicator(model),
@@ -56,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _mapStream = _mapController.mapEventStream;
     geomap = GeoMap(_mapController);
 
-    geomap.initGeoMap();
+    geomap.initGeoMap().then((_) => geomap.centerMapOnUser());
 
     //Checks for user taps
     _mapStream.listen((event) {
@@ -64,11 +65,11 @@ class _MyHomePageState extends State<MyHomePage> {
         MapEventTap tap = event as MapEventTap;
         setState(() {
           //Change this to just publishing tile to database
-          //geomap.addPolygon(tap.tapPosition, selectedColor);
           Provider.of<DatabaseCommunicator>(context, listen: false).addTile(
               selectedColor,
               _geoHasher.encode(
-                  tap.tapPosition.longitude, tap.tapPosition.latitude));
+                  tap.tapPosition.longitude, tap.tapPosition.latitude,
+                  precision: 8));
         });
       } else {
         setState(() {
@@ -113,8 +114,8 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: selectedColor,
         onPressed: () {
-          Provider.of<DatabaseCommunicator>(context, listen: false)
-              .removeAllTiles();
+          /* Provider.of<DatabaseCommunicator>(context, listen: false)
+              .removeAllTiles(); */
 
           //db.clearLocalSafeStorage();
           setState(() {

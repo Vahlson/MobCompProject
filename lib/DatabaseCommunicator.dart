@@ -95,7 +95,7 @@ class DatabaseCommunicator extends ChangeNotifier {
       //Do something when the data at this path changes.
       final data = event.snapshot.value;
 
-      print(data.runtimeType.toString());
+      //print(data.runtimeType.toString());
       if (data != null) {
         Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
         //Do something with the data
@@ -104,14 +104,14 @@ class DatabaseCommunicator extends ChangeNotifier {
       //Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
       //Do something with the data
       //customCallback(dataMap);
-      () {
+      /* () {
         print("Tjaaasa");
-      }();
+      }(); */
 
       //Rebuild everything that depends on the database
       notifyListeners();
       //updateStarCount(data);
-      print(data);
+      //print(data);
     });
   }
 
@@ -127,13 +127,13 @@ class DatabaseCommunicator extends ChangeNotifier {
 
     data.forEach((key, value) {
       if (value != null && key != null) {
-        print("val: " + value.runtimeType.toString());
+        //print("val: " + value.runtimeType.toString());
         Map<String, dynamic> tile = Map<String, dynamic>.from(value);
         //The assumption here is that "value" is another map.
         newTilesList.add(ColoredTile.fromMap(key, tile));
         //print(newTilesList);
 
-        print("tile gathered" + ColoredTile.fromMap(key, tile).toString());
+        //print("tile gathered" + ColoredTile.fromMap(key, tile).toString());
       }
     });
 
@@ -164,6 +164,8 @@ class DatabaseCommunicator extends ChangeNotifier {
     //Read the data from the event.
   }
 */
+
+//SAFE STORAGE FUNCTIONS ----------------------------------------------
   void _saveUserIDLocally(String? userID) async {
     // Write value
     if (userID != null) {
@@ -190,8 +192,8 @@ class DatabaseCommunicator extends ChangeNotifier {
         encryptedSharedPreferences: true,
       );
 
+//Initializes a new user if needed.
   Future<void> _initUser() async {
-    connectionTest();
     _getAndroidOptions();
     String? userID = await _getLocalUserID();
     if (userID == null) {
@@ -222,7 +224,7 @@ class DatabaseCommunicator extends ChangeNotifier {
     final Map<String, Map> updates = {};
     updates['/Users/$newPostKey'] = postData;
     //updates['/user-posts/$uid/$newPostKey'] = postData;
-    print("Här");
+    //print("Här");
 
     FirebaseDatabase.instance.ref().update(updates).then((_) {
       // Data saved successfully!
@@ -237,7 +239,7 @@ class DatabaseCommunicator extends ChangeNotifier {
   }
 
 //Just use these to see that we can post anything.
-  Future<void> connectionTest() async {
+  /* Future<void> connectionTest() async {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref();
     print("conn test");
@@ -262,7 +264,7 @@ class DatabaseCommunicator extends ChangeNotifier {
       // The write failed...
       print("Data write failed");
     });
-  }
+  } */
 
   void removeAllTiles() {
     _removeData(tilesPath);
@@ -305,64 +307,19 @@ class DatabaseCommunicator extends ChangeNotifier {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref().child(tilesPath);
     DatabaseReference newTileRef = ref.child(geohash);
-    print("newtile: " + newTileRef.path);
+    //print("newtile: " + newTileRef.path);
 
     await newTileRef.set({"r": color.red, "b": color.green, "g": color.blue});
-    /*
-
-      Map<String, Object?> updates = {};
-    
-   updates["r"] = ServerValue;
-    updates["user-posts/$key/stars/$uid"] = true;
-    updates["user-posts/$key/starCount"] = ServerValue.increment(1);
-    return FirebaseDatabase.instance.ref().update(updates); */
-
-    //String? userID = await _getLocalUserID();
-
-    print("${color.red},${color.green},${color.blue}");
-/* 
-    //Create transaction with transaction handler.
-    TransactionResult result = await newTileRef.runTransaction((Object? tile) {
-      // Ensure a post at the ref exists.
-      if (tile == null) {
-        print("Aborting");
-        return Transaction.abort();
-      }
-
-      Map<String, dynamic> _tile = Map<String, dynamic>.from(tile as Map);
-
-      _tile["r"] = color.red;
-      _tile["g"] = color.green;
-      _tile["b"] = color.blue;
-
-      // Write the new post's data simultaneously in the posts list and the
-      // user's post list.
-      //updates['/Users/$geohash'] = lng;
-      // Return the new data.
-      return Transaction.success(_tile);
-    }
-
-        //, applyLocally: false  USE this if we don't want events raised on each transaction function update but only on completion.
-        , applyLocally: false);
-
-    print('Committed? ${result.committed}'); // true / false
-    print('Snapshot? ${result.snapshot.key}'); // DataSnapshot
- */
-/* 
-    if (user !== null) {
-    return Transaction.abort();
-  }
- */
   }
 
   //Using atomic server-side increments.
   //Doesn't get automatically rerun if conflict but there should not be any conflicts since the increment is run directly on the server.
-  void addStar(uid, key) async {
+  /* void addStar(uid, key) async {
     Map<String, Object?> updates = {};
     updates["posts/$key/stars/$uid"] = true;
     updates["posts/$key/starCount"] = ServerValue.increment(1);
     updates["user-posts/$key/stars/$uid"] = true;
     updates["user-posts/$key/starCount"] = ServerValue.increment(1);
     return FirebaseDatabase.instance.ref().update(updates);
-  }
+  } */
 }

@@ -52,14 +52,23 @@ class GeoMap {
     location.onLocationChanged.listen((LocationData userLocation) {
       userPosition =
           LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
-      _mapController.move(
-          userPosition,
-          _mapController
-              .zoom); //We don't want this. Should only center when we start the application
     });
+
+    LocationData userLocation = await location.getLocation();
+    userPosition =
+        LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
 
     //Map
     onMapMove();
+  }
+
+  void centerMapOnUser() async {
+    /* Location location = Location();
+    LocationData userLocation = await location.getLocation();
+    userPosition =
+        LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0); */
+    _mapController.move(userPosition, _mapController.zoom);
+    print("Centering");
   }
 
   LatLng getGeoCenter(LatLng latlng) {
@@ -67,14 +76,6 @@ class GeoMap {
         _geoHasher.encode(latlng.longitude, latlng.latitude, precision: 8);
     List<double> geohashLatlng = _geoHasher.decode(geohash);
     return LatLng(geohashLatlng[1], geohashLatlng[0]);
-  }
-
-  void addTile(LatLng latlng, Colors color) {
-    //tiles.add(...)
-  }
-
-  void addPolygon(LatLng latlng, Color color) {
-    //_polygons.add(createPolygon(ColoredTile(getGeoCenter(latlng), color)));
   }
 
   List<LatLng> createSquare(ColoredTile tile) {
@@ -197,7 +198,7 @@ class GeoMap {
 
 //TODO change how the map gets the model ? MODEL should live in main or something. maybe make one controller class which creates both map and dbcomm and model.
   Widget showMap(Model model) {
-    print("Found tiles: " + model.getTiles().toString());
+    //print("Found tiles: " + model.getTiles().toString());
     //List<Polygon> _polygons = [];
     List<Polygon> _polygons = model
         .getTiles()
