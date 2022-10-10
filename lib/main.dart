@@ -1,16 +1,18 @@
 import 'package:artmap/DatabaseCommunicator.dart';
 import 'package:dart_geohash/dart_geohash.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'model/Model.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
+import 'model/Model.dart';
 
 import 'map.dart';
 
 void main() {
+  Model model = Model();
   runApp(
     ChangeNotifierProvider(
-      create: (context) => DatabaseCommunicator(),
+      create: (context) => DatabaseCommunicator(model),
       child: const MyApp(),
     ),
   );
@@ -76,6 +78,10 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void setUpFirebase() async {
+    await Firebase.initializeApp();
+  }
+
   @override
   void initState() {
     //db = DatabaseCommunicator();
@@ -85,6 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
     initMap();
 
     super.initState();
+    //setUpFirebase();
   }
 
   @override
@@ -98,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
           height: 800,
           child: Consumer<DatabaseCommunicator>(
             builder: (context, dbCommunicator, child) {
-              return geomap.showMap();
+              return geomap.showMap(dbCommunicator.model);
             },
           ),
         ),
@@ -106,6 +113,9 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: selectedColor,
         onPressed: () {
+          Provider.of<DatabaseCommunicator>(context, listen: false)
+              .removeAllTiles();
+
           //db.clearLocalSafeStorage();
           setState(() {
             if (selectedColor == Colors.black) {

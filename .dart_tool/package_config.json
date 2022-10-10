@@ -3,7 +3,7 @@
   "packages": [
     {
       "name": "_flutterfire_internals",
-      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/_flutterfire_internals-1.0.1",
+      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/_flutterfire_internals-1.0.2",
       "packageUri": "lib/",
       "languageVersion": "2.16"
     },
@@ -39,13 +39,13 @@
     },
     {
       "name": "cloud_firestore_platform_interface",
-      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/cloud_firestore_platform_interface-5.7.6",
+      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/cloud_firestore_platform_interface-5.7.7",
       "packageUri": "lib/",
       "languageVersion": "2.16"
     },
     {
       "name": "cloud_firestore_web",
-      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/cloud_firestore_web-2.8.9",
+      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/cloud_firestore_web-2.8.10",
       "packageUri": "lib/",
       "languageVersion": "2.16"
     },
@@ -93,19 +93,19 @@
     },
     {
       "name": "firebase_database",
-      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database-9.1.6",
+      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database-9.1.7",
       "packageUri": "lib/",
       "languageVersion": "2.16"
     },
     {
       "name": "firebase_database_platform_interface",
-      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database_platform_interface-0.2.2+6",
+      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database_platform_interface-0.2.2+7",
       "packageUri": "lib/",
       "languageVersion": "2.16"
     },
     {
       "name": "firebase_database_web",
-      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database_web-0.2.1+8",
+      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_database_web-0.2.1+9",
       "packageUri": "lib/",
       "languageVersion": "2.16"
     },
@@ -302,12 +302,6 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "quiver",
-      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/quiver-3.1.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
       "name": "sky_engine",
       "rootUri": "file:///C:/src/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
@@ -351,9 +345,9 @@
     },
     {
       "name": "tuple",
-      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/tuple-2.0.0",
+      "rootUri": "file:///C:/src/flutter/.pub-cache/hosted/pub.dartlang.org/tuple-2.0.1",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "2.14"
     },
     {
       "name": "typed_data",
@@ -386,7 +380,7 @@
       "languageVersion": "2.18"
     }
   ],
-  "generated": "2022-10-07T13:22:13.635744Z",
+  "generated": "2022-10-10T08:03:14.995911Z",
   "generator": "pub",
   "generatorVersion": "2.18.0"
 }

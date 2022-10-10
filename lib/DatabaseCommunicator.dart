@@ -13,9 +13,15 @@ import 'model/Model.dart';
 //https://firebase.google.com/docs/database/flutter/structure-data
 class DatabaseCommunicator extends ChangeNotifier {
   late final secureLocalStorage;
+  //We instantiate the model here.
+  late final Model model;
 
-  DatabaseCommunicator() {
+  static const String tilesPath = "Tiles";
+  static const String usersPath = "Users";
+
+  DatabaseCommunicator(this.model) {
     secureLocalStorage = FlutterSecureStorage();
+    //model = Model();
     initFirebase();
   }
 
@@ -24,7 +30,10 @@ class DatabaseCommunicator extends ChangeNotifier {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    _initUser();
+    print("Inititializing database.");
+    await _initUser();
+
+    _listenToTilesChange();
   }
 
 /*
@@ -78,17 +87,57 @@ class DatabaseCommunicator extends ChangeNotifier {
   //Important: A DatabaseEvent is fired every time data is changed at the specified database reference, including changes to children. To limit the size of your snapshots, attach only at the highest level needed for watching changes. For example, attaching a listener to the root of your database is not recommended.
   //PREFER USING THIS OVER GET BECAUSE ITS CHEAPER (IN MONEY IT DOESN'T COST AS MUCH)
   //This is called once when the listener is attached and then everytime it changes.
-  void listenToDataChange(String databasePath) {
+  void _listenToDataChange(
+      String databasePath, Function(Map<String, dynamic>) customCallback) {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference databaseRef = database.ref(databasePath);
     databaseRef.onValue.listen((DatabaseEvent event) {
       //Do something when the data at this path changes.
       final data = event.snapshot.value;
+
+      print(data.runtimeType.toString());
+      if (data != null) {
+        Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+        //Do something with the data
+        customCallback(dataMap);
+      }
+      //Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+      //Do something with the data
+      //customCallback(dataMap);
+      () {
+        print("Tjaaasa");
+      }();
+
       //Rebuild everything that depends on the database
       notifyListeners();
       //updateStarCount(data);
       print(data);
     });
+  }
+
+  void _listenToTilesChange() {
+    _listenToDataChange(tilesPath, _saveTilesToModel);
+  }
+
+  void _saveTilesToModel(Map<String, dynamic> data) {
+    List<ColoredTile> newTilesList = [];
+    //print("AAAAAAAAAAAA");
+
+    //print("Found data in database" + data.toString());
+
+    data.forEach((key, value) {
+      if (value != null && key != null) {
+        print("val: " + value.runtimeType.toString());
+        Map<String, dynamic> tile = Map<String, dynamic>.from(value);
+        //The assumption here is that "value" is another map.
+        newTilesList.add(ColoredTile.fromMap(key, tile));
+        //print(newTilesList);
+
+        print("tile gathered" + ColoredTile.fromMap(key, tile).toString());
+      }
+    });
+
+    model.setTiles(newTilesList);
   }
 
 /*
@@ -141,7 +190,8 @@ class DatabaseCommunicator extends ChangeNotifier {
         encryptedSharedPreferences: true,
       );
 
-  void _initUser() async {
+  Future<void> _initUser() async {
+    connectionTest();
     _getAndroidOptions();
     String? userID = await _getLocalUserID();
     if (userID == null) {
@@ -155,7 +205,7 @@ class DatabaseCommunicator extends ChangeNotifier {
 
   Future<String?> _createNewUser() async {
     FirebaseDatabase database = FirebaseDatabase.instance;
-    DatabaseReference ref = database.ref().child("Users");
+    DatabaseReference ref = database.ref().child(usersPath);
 
     //TODO generate a new ID.
     // A post entry.
@@ -172,26 +222,63 @@ class DatabaseCommunicator extends ChangeNotifier {
     final Map<String, Map> updates = {};
     updates['/Users/$newPostKey'] = postData;
     //updates['/user-posts/$uid/$newPostKey'] = postData;
+    print("Här");
+
     FirebaseDatabase.instance.ref().update(updates).then((_) {
       // Data saved successfully!
+      print("Data saved Successfully");
     }).catchError((error) {
       // The write failed...
+      print("Data write failed");
     });
 
     //return FirebaseDatabase.instance.ref().update(updates);
     return newPostKey;
   }
 
-/*
-  void removeData(String databasePath) async {
-    final ref = database.ref(databasePath);
+//Just use these to see that we can post anything.
+  Future<void> connectionTest() async {
+    FirebaseDatabase database = FirebaseDatabase.instance;
+    DatabaseReference ref = database.ref();
+    print("conn test");
+
+    final newPostKey = ref.push().key;
+    print(newPostKey);
+
+    final postData = {
+      'groups': "",
+    };
+
+    // Write the new post's data simultaneously in the posts list and the
+    // user's post list.
+    final Map<String, Map> updates = {};
+    updates['/Test/$newPostKey'] = postData;
+    //updates['/user-posts/$uid/$newPostKey'] = postData;
+
+    FirebaseDatabase.instance.ref().update(updates).then((_) {
+      // Data saved successfully!
+      print("Data saved Successfully");
+    }).catchError((error) {
+      // The write failed...
+      print("Data write failed");
+    });
+  }
+
+  void removeAllTiles() {
+    _removeData(tilesPath);
+  }
+
+  void _removeData(String databasePath) async {
+    FirebaseDatabase database = FirebaseDatabase.instance;
+    DatabaseReference ref = database.ref(databasePath);
     await ref.remove().then((_) {
       // Data removed successfully!
     }).catchError((error) {
       // The remove failed...
     });
+    //notifyListeners();
   }
-
+/*
 
   void removeMultiple(String name) async {
     //TODO generate a new ID.
@@ -216,53 +303,51 @@ class DatabaseCommunicator extends ChangeNotifier {
   //It seems that a transaction can both get and post data in one go which should be CHEAPER $$$$$$ and also handles concurrency issues.
   void addTile(Color color, String geohash) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
-    DatabaseReference ref = database.ref().child("Tiles");
+    DatabaseReference ref = database.ref().child(tilesPath);
+    DatabaseReference newTileRef = ref.child(geohash);
+    print("newtile: " + newTileRef.path);
 
-    String? userID = await _getLocalUserID();
+    await newTileRef.set({"r": color.red, "b": color.green, "g": color.blue});
+    /*
 
-    print(color);
+      Map<String, Object?> updates = {};
+    
+   updates["r"] = ServerValue;
+    updates["user-posts/$key/stars/$uid"] = true;
+    updates["user-posts/$key/starCount"] = ServerValue.increment(1);
+    return FirebaseDatabase.instance.ref().update(updates); */
 
+    //String? userID = await _getLocalUserID();
+
+    print("${color.red},${color.green},${color.blue}");
+/* 
     //Create transaction with transaction handler.
-    TransactionResult result = await ref.runTransaction((Object? tiles) {
+    TransactionResult result = await newTileRef.runTransaction((Object? tile) {
       // Ensure a post at the ref exists.
-      if (tiles == null) {
+      if (tile == null) {
+        print("Aborting");
         return Transaction.abort();
       }
 
-      Map<String, dynamic> _tiles = Map<String, dynamic>.from(tiles as Map);
+      Map<String, dynamic> _tile = Map<String, dynamic>.from(tile as Map);
 
-      /*    final postData = {
-        '$geohash': "$color",
-      }; */
+      _tile["r"] = color.red;
+      _tile["g"] = color.green;
+      _tile["b"] = color.blue;
 
       // Write the new post's data simultaneously in the posts list and the
       // user's post list.
       //updates['/Users/$geohash'] = lng;
-
-      _tiles["$geohash"] = "$color";
-
-      if (tiles is Map) {
-        //_post["starCount"] = (_post["starCount"] ?? 1) - 1;
-        //TODO this is where we need to add to the correct geohashed location.
-
-      } else {
-        //_post["starCount"] = (_post["starCount"] ?? 0) + 1;
-        /* if (!_post.containsKey("lat")) {
-          _post["lat"] = {};
-        } */
-        //_post["texels"][uid] = true;
-      }
-
       // Return the new data.
-      return Transaction.success(_tiles);
+      return Transaction.success(_tile);
     }
 
         //, applyLocally: false  USE this if we don't want events raised on each transaction function update but only on completion.
-        );
+        , applyLocally: false);
 
     print('Committed? ${result.committed}'); // true / false
-    print('Snapshot? ${result.snapshot}'); // DataSnapshot
-
+    print('Snapshot? ${result.snapshot.key}'); // DataSnapshot
+ */
 /* 
     if (user !== null) {
     return Transaction.abort();

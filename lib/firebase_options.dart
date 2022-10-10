@@ -49,6 +49,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '886997786110',
     projectId: 'mobile-computing-project-ixd',
     authDomain: 'mobile-computing-project-ixd.firebaseapp.com',
+    databaseURL: 'https://mobile-computing-project-ixd-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'mobile-computing-project-ixd.appspot.com',
   );
 
@@ -57,14 +58,16 @@ class DefaultFirebaseOptions {
     appId: '1:886997786110:android:a68ead46ba150c7f8f34af',
     messagingSenderId: '886997786110',
     projectId: 'mobile-computing-project-ixd',
+    databaseURL: 'https://mobile-computing-project-ixd-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'mobile-computing-project-ixd.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDAj3jk5tTw8xm9xxhKczUtm4isINEv1CI',
-    appId: '1:886997786110:ios:a818667ac3ee8ff88f34af',
+    appId: '1:886997786110:ios:8563137b57b118658f34af',
     messagingSenderId: '886997786110',
     projectId: 'mobile-computing-project-ixd',
+    databaseURL: 'https://mobile-computing-project-ixd-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'mobile-computing-project-ixd.appspot.com',
     iosClientId: '886997786110-ioueutvjkocbt4tki7t8c25tpe2182ii.apps.googleusercontent.com',
     iosBundleId: 'com.example.artmap',
@@ -72,9 +75,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyDAj3jk5tTw8xm9xxhKczUtm4isINEv1CI',
-    appId: '1:886997786110:ios:a818667ac3ee8ff88f34af',
+    appId: '1:886997786110:ios:8563137b57b118658f34af',
     messagingSenderId: '886997786110',
     projectId: 'mobile-computing-project-ixd',
+    databaseURL: 'https://mobile-computing-project-ixd-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'mobile-computing-project-ixd.appspot.com',
     iosClientId: '886997786110-ioueutvjkocbt4tki7t8c25tpe2182ii.apps.googleusercontent.com',
     iosBundleId: 'com.example.artmap',

@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:location/location.dart';
 import 'coloredTile.dart';
+import 'model/Model.dart';
 
 class GeoMap {
   GeoMap(this._mapController);
@@ -12,9 +13,7 @@ class GeoMap {
 
   final GeoHasher _geoHasher = GeoHasher();
 
-  List<ColoredTile> _tiles = []; //Should be downloaded from database
-
-  List<Polygon> _polygons = []; //Used to populate map
+  //Should be downloaded from database
 
   List<Polyline> _gridX = [];
   List<Polyline> _gridY = [];
@@ -51,36 +50,43 @@ class GeoMap {
     }
 
     location.onLocationChanged.listen((LocationData userLocation) {
-      userPosition = LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
-      _mapController.move(userPosition,  _mapController.zoom); //We don't want this. Should only center when we start the application
+      userPosition =
+          LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
+      _mapController.move(
+          userPosition,
+          _mapController
+              .zoom); //We don't want this. Should only center when we start the application
     });
 
     //Map
     onMapMove();
   }
 
-  LatLng getGeoCenter(LatLng latlng){
-    String geohash = _geoHasher.encode(latlng.longitude, latlng.latitude, precision: 8);
+  LatLng getGeoCenter(LatLng latlng) {
+    String geohash =
+        _geoHasher.encode(latlng.longitude, latlng.latitude, precision: 8);
     List<double> geohashLatlng = _geoHasher.decode(geohash);
     return LatLng(geohashLatlng[1], geohashLatlng[0]);
   }
 
-  void addTile(LatLng latlng, Colors color){
+  void addTile(LatLng latlng, Colors color) {
     //tiles.add(...)
   }
 
   void addPolygon(LatLng latlng, Color color) {
-    _polygons.add(createPolygon(ColoredTile(getGeoCenter(latlng), color)));
+    //_polygons.add(createPolygon(ColoredTile(getGeoCenter(latlng), color)));
   }
 
   List<LatLng> createSquare(ColoredTile tile) {
     double lat = tile.position.latitude;
     double lng = tile.position.longitude;
 
-    return [LatLng(lat + _latDiff, lng + _lngDiff),
+    return [
+      LatLng(lat + _latDiff, lng + _lngDiff),
       LatLng(lat + _latDiff, lng - _lngDiff),
       LatLng(lat - _latDiff, lng - _lngDiff),
-      LatLng(lat - _latDiff, lng + _lngDiff),];
+      LatLng(lat - _latDiff, lng + _lngDiff),
+    ];
   }
 
   Polygon createPolygon(ColoredTile tile) {
@@ -99,29 +105,35 @@ class GeoMap {
   }
 
   void populateGrid() {
-    if(zoom >= 17){
-      LatLngBounds border = _mapController.bounds ?? LatLngBounds(LatLng(0, 0), LatLng(0, 0));
+    if (zoom >= 17) {
+      LatLngBounds border =
+          _mapController.bounds ?? LatLngBounds(LatLng(0, 0), LatLng(0, 0));
       double left = border.west;
-      double right  = border.east;
+      double right = border.east;
 
       double top = border.north;
-      double bottom  = border.south;
+      double bottom = border.south;
 
       List<Polyline> newGridX = [];
       List<Polyline> newGridY = [];
 
       //Populate x
-      for(double i = left; i <= right; i+=(_lngDiff*2)) {
+      for (double i = left; i <= right; i += (_lngDiff * 2)) {
         //get the center of the start and end point
         LatLng startLatLngCenter = getGeoCenter(LatLng(top, i));
         LatLng endLatLngCenter = getGeoCenter(LatLng(bottom, i));
 
         //Add half a square, so that the lines are not in the middle
-        LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff), (startLatLngCenter.longitude + _lngDiff));
-        LatLng endLatLng = LatLng((endLatLngCenter.latitude - _latDiff), (endLatLngCenter.longitude + _lngDiff));
+        LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff),
+            (startLatLngCenter.longitude + _lngDiff));
+        LatLng endLatLng = LatLng((endLatLngCenter.latitude - _latDiff),
+            (endLatLngCenter.longitude + _lngDiff));
 
         newGridX.add(Polyline(
-          points: [startLatLng, endLatLng,],
+          points: [
+            startLatLng,
+            endLatLng,
+          ],
           color: Colors.black45,
           strokeWidth: 1,
         ));
@@ -130,17 +142,22 @@ class GeoMap {
       _gridX = newGridX;
 
       //Populate y
-      for(double i = bottom; i <= top; i+=(_latDiff*2)) {
+      for (double i = bottom; i <= top; i += (_latDiff * 2)) {
         //get the center of the start and end point
         LatLng startLatLngCenter = getGeoCenter(LatLng(i, left));
         LatLng endLatLngCenter = getGeoCenter(LatLng(i, right));
 
         //Add half a square, so that the lines are not in the middle
-        LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff), (startLatLngCenter.longitude - _lngDiff));
-        LatLng endLatLng = LatLng((endLatLngCenter.latitude + _latDiff), (endLatLngCenter.longitude + _lngDiff));
+        LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff),
+            (startLatLngCenter.longitude - _lngDiff));
+        LatLng endLatLng = LatLng((endLatLngCenter.latitude + _latDiff),
+            (endLatLngCenter.longitude + _lngDiff));
 
         newGridY.add(Polyline(
-          points: [startLatLng, endLatLng,],
+          points: [
+            startLatLng,
+            endLatLng,
+          ],
           color: Colors.black45,
           strokeWidth: 1,
         ));
@@ -157,26 +174,37 @@ class GeoMap {
     double outer = (zoom >= 16) ? 5 : 2;
     double inner = (zoom >= 16) ? 20 : 7;
     double size = outer + inner;
-    return [Marker(point: userPosition,
-        width: size,
-        height: size,
-        builder: (context) => AnimatedContainer(
-          width: inner,
-          height: inner,
-          decoration: BoxDecoration(
-              color: Colors.black,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: outer,
-                strokeAlign: StrokeAlign.outside,
-              )
-          ), duration: const Duration(milliseconds: 500),
-        )
-    )];
+    return [
+      Marker(
+          point: userPosition,
+          width: size,
+          height: size,
+          builder: (context) => AnimatedContainer(
+                width: inner,
+                height: inner,
+                decoration: BoxDecoration(
+                    color: Colors.black,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: outer,
+                      strokeAlign: StrokeAlign.outside,
+                    )),
+                duration: const Duration(milliseconds: 500),
+              ))
+    ];
   }
 
-  Widget showMap() {
+//TODO change how the map gets the model ? MODEL should live in main or something. maybe make one controller class which creates both map and dbcomm and model.
+  Widget showMap(Model model) {
+    print("Found tiles: " + model.getTiles().toString());
+    //List<Polygon> _polygons = [];
+    List<Polygon> _polygons = model
+        .getTiles()
+        .map((tile) =>
+            createPolygon(ColoredTile(getGeoCenter(tile.position), tile.color)))
+        .toList();
+
     return FlutterMap(
       options: MapOptions(
         center: userPosition,
@@ -214,7 +242,5 @@ class GeoMap {
         ),
       ],
     );
-
   }
-
 }
