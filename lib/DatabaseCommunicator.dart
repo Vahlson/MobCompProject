@@ -43,6 +43,8 @@ class BlueprintsChangeNotifier extends ChangeNotifier {
   void addTile(Color color, String geohash) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref().child(dbCom.blueprintsPath);
+    //TODO reference blueprint ID?.
+
     DatabaseReference newTileRef = ref.child(geohash);
     //print("newtile: " + newTileRef.path);
 

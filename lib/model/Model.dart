@@ -54,6 +54,10 @@ class Blueprint {
   List<ColoredTile> _blueprintTiles = [];
   String groupID = "";
 
+  List<ColoredTile> getTiles() {
+    return _blueprintTiles.toList();
+  }
+
   Blueprint(this._blueprintTiles);
 
   Blueprint.fromMap(String geohash, Map<String, dynamic> data) {}
