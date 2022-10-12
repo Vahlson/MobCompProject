@@ -240,6 +240,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text("map"),
         actions: [
           IconButton(
+            //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
               icon: Icon((selectedOpacity == 1) ? Icons.water_drop : ((selectedOpacity == 0.5) ? Icons.opacity : Icons.water_drop_outlined)),
               onPressed: () {
                 setState(() {
