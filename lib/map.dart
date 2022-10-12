@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dart_geohash/dart_geohash.dart';
+import 'package:location/location.dart';
 import 'coloredTile.dart';
 import 'main.dart';
+import 'model/Model.dart';
 
 class GeoMap {
   GeoMap(this._mapController);
@@ -12,74 +14,131 @@ class GeoMap {
 
   final GeoHasher _geoHasher = GeoHasher();
 
-  List<ColoredTile> _tiles = []; //Should be downloaded from database
-
-  List<Polygon> _polygons = []; //Used to populate map
+  //Should be downloaded from database
 
   List<Polyline> _gridX = [];
   List<Polyline> _gridY = [];
 
   //Half a square
-  double _lngDiff = 0.00017185; //Might overlap, original was: 0.00017167
-  double _latDiff = 0.00017185 / 2;
+  final double _lngDiff = 0.00017185; //Might overlap, original was: 0.00017167
+  final double _latDiff = 0.00017185 / 2;
 
-  void addTile(LatLng latlng, Colors color){
-    //tiles.add(...)
+  LatLng _userPosition = LatLng(0, 0);
+
+  double _zoom = 0;
+
+  List<Polygon> _drawableArea = [];
+  late LatLngBounds _drawableBounds;
+
+  Future<void> initGeoMap() async {
+    //Location
+    Location location = Location();
+
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return;
+      }
+    }
+
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    location.onLocationChanged.listen((LocationData userLocation) {
+      _userPosition =
+          LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
+    });
+
+    LocationData userLocation = await location.getLocation();
+    _userPosition =
+        LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
+
+    //Map
+    onMapMove();
   }
 
-  LatLng getGeoCenter(LatLng latlng){
-    String geohash = _geoHasher.encode(latlng.longitude, latlng.latitude, precision: 8);
+  void centerMapOnUser() async {
+    /* Location location = Location();
+    LocationData userLocation = await location.getLocation();
+    userPosition =
+        LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0); */
+    _mapController.move(_userPosition, _mapController.zoom);
+    print("Centering");
+  }
+
+  LatLng _getGeoCenter(LatLng latlng) {
+    String geohash =
+        _geoHasher.encode(latlng.longitude, latlng.latitude, precision: 8);
     List<double> geohashLatlng = _geoHasher.decode(geohash);
     return LatLng(geohashLatlng[1], geohashLatlng[0]);
   }
 
-  void addPolygon(LatLng latlng, Color color) {
-    _polygons.add(createPolygon(ColoredTile(getGeoCenter(latlng), color)));
-  }
-
-  List<LatLng> createSquare(ColoredTile tile) {
+  List<LatLng> _createSquare(ColoredTile tile) {
     double lat = tile.position.latitude;
     double lng = tile.position.longitude;
 
-    return [LatLng(lat + _latDiff, lng + _lngDiff),
+    return [
+      LatLng(lat + _latDiff, lng + _lngDiff),
       LatLng(lat + _latDiff, lng - _lngDiff),
       LatLng(lat - _latDiff, lng - _lngDiff),
-      LatLng(lat - _latDiff, lng + _lngDiff),];
+      LatLng(lat - _latDiff, lng + _lngDiff),
+    ];
   }
 
-  Polygon createPolygon(ColoredTile tile) {
+  Polygon _createPolygon(ColoredTile tile) {
     return Polygon(
-      points: createSquare(tile),
+      points: _createSquare(tile),
       color: tile.color,
       isFilled: true,
       borderStrokeWidth: 0,
     );
   }
 
-  void populateGrid() {
-    if(_mapController.zoom >= 17){
-      LatLngBounds border = _mapController.bounds ?? LatLngBounds(LatLng(0, 0), LatLng(0, 0));
+  void onMapMove() {
+    _zoom = _mapController.zoom;
+
+    _populateGrid();
+  }
+
+  void _populateGrid() {
+    if (_zoom >= 17) {
+      LatLngBounds border =
+          _mapController.bounds ?? LatLngBounds(LatLng(0, 0), LatLng(0, 0));
       double left = border.west;
-      double right  = border.east;
+      double right = border.east;
 
       double top = border.north;
-      double bottom  = border.south;
+      double bottom = border.south;
 
       List<Polyline> newGridX = [];
       List<Polyline> newGridY = [];
 
       //Populate x
-      for(double i = left; i <= right; i+=(_lngDiff*2)) {
+      for (double i = left; i <= right; i += (_lngDiff * 2)) {
         //get the center of the start and end point
-        LatLng startLatLngCenter = getGeoCenter(LatLng(top, i));
-        LatLng endLatLngCenter = getGeoCenter(LatLng(bottom, i));
+        LatLng startLatLngCenter = _getGeoCenter(LatLng(top, i));
+        LatLng endLatLngCenter = _getGeoCenter(LatLng(bottom, i));
 
         //Add half a square, so that the lines are not in the middle
-        LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff), (startLatLngCenter.longitude + _lngDiff));
-        LatLng endLatLng = LatLng((endLatLngCenter.latitude - _latDiff), (endLatLngCenter.longitude + _lngDiff));
+        LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff),
+            (startLatLngCenter.longitude + _lngDiff));
+        LatLng endLatLng = LatLng((endLatLngCenter.latitude - _latDiff),
+            (endLatLngCenter.longitude + _lngDiff));
 
         newGridX.add(Polyline(
-          points: [startLatLng, endLatLng,],
+          points: [
+            startLatLng,
+            endLatLng,
+          ],
           color: Colors.black45,
           strokeWidth: 1,
         ));
@@ -88,33 +147,115 @@ class GeoMap {
       _gridX = newGridX;
 
       //Populate y
-      for(double i = bottom; i <= top; i+=(_latDiff*2)) {
+      for (double i = bottom; i <= top; i += (_latDiff * 2)) {
         //get the center of the start and end point
-        LatLng startLatLngCenter = getGeoCenter(LatLng(i, left));
-        LatLng endLatLngCenter = getGeoCenter(LatLng(i, right));
+        LatLng startLatLngCenter = _getGeoCenter(LatLng(i, left));
+        LatLng endLatLngCenter = _getGeoCenter(LatLng(i, right));
 
         //Add half a square, so that the lines are not in the middle
-        LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff), (startLatLngCenter.longitude - _lngDiff));
-        LatLng endLatLng = LatLng((endLatLngCenter.latitude + _latDiff), (endLatLngCenter.longitude + _lngDiff));
+        LatLng startLatLng = LatLng((startLatLngCenter.latitude + _latDiff),
+            (startLatLngCenter.longitude - _lngDiff));
+        LatLng endLatLng = LatLng((endLatLngCenter.latitude + _latDiff),
+            (endLatLngCenter.longitude + _lngDiff));
 
         newGridY.add(Polyline(
-          points: [startLatLng, endLatLng,],
+          points: [
+            startLatLng,
+            endLatLng,
+          ],
           color: Colors.black45,
           strokeWidth: 1,
         ));
       }
 
       _gridY = newGridY;
+
+      _showDrawableArea();
     } else {
       _gridX = [];
       _gridY = [];
+      _drawableArea = [];
     }
   }
 
-  Widget showMap() {
+  List<Marker> _userMarker() {
+    double outer = (_zoom >= 17) ? 5 : 2;
+    double inner = (_zoom >= 17) ? 20 : 7;
+    double size = outer + inner;
+
+    return [
+      Marker(
+          point: _userPosition,
+          width: size,
+          height: size,
+          builder: (context) => AnimatedContainer(
+                width: inner,
+                height: inner,
+                decoration: BoxDecoration(
+                    color: Colors.black,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: outer,
+                      strokeAlign: StrokeAlign.outside,
+                    )),
+                duration: const Duration(milliseconds: 500),
+              ))
+    ];
+  }
+
+  void _showDrawableArea() {
+    LatLng topLeftCenter = _getGeoCenter(LatLng(
+        _userPosition.latitude + (_latDiff * 4),
+        _userPosition.longitude + (_lngDiff * 4)));
+    LatLng bottomRightCenter = _getGeoCenter(LatLng(
+        _userPosition.latitude - (_latDiff * 4),
+        _userPosition.longitude - (_lngDiff * 4)));
+
+    LatLng topLeft = LatLng(
+        topLeftCenter.latitude + _latDiff, topLeftCenter.longitude + _lngDiff);
+    LatLng bottomRight = LatLng(bottomRightCenter.latitude - _latDiff,
+        bottomRightCenter.longitude - _lngDiff);
+
+    _drawableBounds = LatLngBounds(topLeft, bottomRight);
+
+    _drawableArea = [
+      Polygon(
+        points: [
+          _drawableBounds.northWest,
+          _drawableBounds.northEast ?? LatLng(0, 0),
+          _drawableBounds.southEast,
+          _drawableBounds.southWest ?? LatLng(0, 0)
+        ],
+        borderColor: Colors.amber,
+        borderStrokeWidth: 2,
+      )
+    ];
+  }
+
+  bool isValidTilePosition(double lat, double lng) {
+    LatLng latLng = LatLng(lat, lng);
+    return _drawableBounds.contains(latLng);
+  }
+
+  Widget showMap(Model model) {
+    List<Polygon> _polygons = model
+        .getTiles()
+        .map((tile) => _createPolygon(
+            ColoredTile(_getGeoCenter(tile.position), tile.color)))
+        .toList();
+
+    //TODO change _createPolygon to something else
+    List<Polygon>? _blueprintPolygons = model
+        .getActiveBlueprint()
+        ?.getTiles()
+        .map((tile) => _createPolygon(
+            ColoredTile(_getGeoCenter(tile.position), tile.color)))
+        .toList();
+
     return FlutterMap(
       options: MapOptions(
-        center: LatLng(57.70677670633015, 11.936813840131594),
+        center: _userPosition,
         zoom: 18,
         maxZoom: 22,
       ),
@@ -134,7 +275,7 @@ class GeoMap {
         //Colored tiles
         PolygonLayer(
           polygonCulling: false,
-          polygons: _polygons,
+          polygons: _polygons + _drawableArea,
         ),
 
         //Grid
@@ -142,9 +283,12 @@ class GeoMap {
           polylineCulling: false,
           polylines: _gridX + _gridY,
         ),
+
+        //Mark user position
+        MarkerLayer(
+          markers: _userMarker(),
+        ),
       ],
     );
-
   }
-
 }
