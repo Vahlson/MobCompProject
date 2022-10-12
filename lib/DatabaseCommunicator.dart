@@ -8,19 +8,18 @@ import 'package:provider/provider.dart';
 
 import 'model/Model.dart';
 
-class BlueprintsChangeNotifier extends ChangeNotifier {
+class BlueprintChangeNotifier extends ChangeNotifier {
   DatabaseCommunicator dbCom;
-  BlueprintsChangeNotifier(this.dbCom);
+  BlueprintChangeNotifier(this.dbCom);
 
   void _listenToBlueprintChange() {
-    dbCom.listenToDataChange(
-        dbCom.blueprintsPath, (Map<String, dynamic> data) {});
+    dbCom.listenToDataChange(dbCom.blueprintsPath, _saveBlueprintTileToModel);
   }
 
   Future<void> initialize() async {
     await dbCom.initFirebase();
     //TODO enable
-    //_listenToBlueprintChange();
+    _listenToBlueprintChange();
   }
 
   void _saveBlueprintTileToModel(Map<String, dynamic> data) {
@@ -34,21 +33,42 @@ class BlueprintsChangeNotifier extends ChangeNotifier {
       }
     });
 
-    dbCom.model.setActiveBlueprint(Blueprint(newBlueprintTilesList));
+    //Update active blueprint in model
+    dbCom.model.getActiveBlueprint()?.setTiles(newBlueprintTilesList);
   }
 
-  //Uses transactions to change data that might get corrupted due to concurrent changes.
-  //SUCH AS: editing a blot on the map.
-  //It seems that a transaction can both get and post data in one go which should be CHEAPER $$$$$$ and also handles concurrency issues.
+  void createNewBlueprint() async {
+    String? blueprintID =
+        await dbCom._createNewDatabaseEntryUnderPath(dbCom.blueprintsPath);
+    if (blueprintID != null) {
+      Blueprint newBlueprint = Blueprint(blueprintID);
+      dbCom.model.addBlueprint(newBlueprint);
+
+      //Set this as the active one if we dont have an active blueprint
+      if (dbCom.model.getActiveBlueprint() == null) {
+        dbCom.model.setActiveBlueprint(newBlueprint);
+      }
+    }
+  }
+
+//Adds a tile to the active blueprint's database
   void addTile(Color color, String geohash) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref().child(dbCom.blueprintsPath);
-    //TODO reference blueprint ID?.
 
-    DatabaseReference newTileRef = ref.child(geohash);
-    //print("newtile: " + newTileRef.path);
+    //reference blueprint ID.
+    String? activeBlueprintID =
+        dbCom.model.getActiveBlueprint()?.getBlueprintID();
 
-    await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
+    //Add tile to database if we have a valid active blueprint
+    if (activeBlueprintID != null) {
+      DatabaseReference activeBlueprintRef = ref.child(activeBlueprintID);
+
+      DatabaseReference newTileRef = activeBlueprintRef.child(geohash);
+      //print("newtile: " + newTileRef.path);
+
+      await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
+    }
   }
 }
 
@@ -92,6 +112,10 @@ class MapChangeNotifier extends ChangeNotifier {
     //print("newtile: " + newTileRef.path);
 
     await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
+  }
+
+  void removeAllTiles() {
+    dbCom._removeData(dbCom.tilesPath);
   }
 }
 
@@ -273,6 +297,32 @@ class DatabaseCommunicator {
     return newPostKey;
   }
 
+  //Returns the key
+  Future<String?> _createNewDatabaseEntryUnderPath(String databasePath,
+      {Map<String, dynamic> postData = const {}}) async {
+    FirebaseDatabase database = FirebaseDatabase.instance;
+    DatabaseReference ref = database.ref().child(usersPath);
+
+    //generate a new ID.
+    final newPostKey = ref.push().key;
+
+    // Write the new post's data simultaneously in the posts list and the
+    // user's post list.
+    final Map<String, Map> updates = {};
+    updates['$newPostKey'] = postData;
+    //updates['$newPostKey'] = postData;
+
+    ref.update(updates).then((_) {
+      // Data saved successfully!
+      print("Data saved Successfully");
+    }).catchError((error) {
+      // The write failed...
+      print("Data write failed");
+    });
+
+    return newPostKey;
+  }
+
 //Just use these to see that we can post anything.
   /* Future<void> connectionTest() async {
     FirebaseDatabase database = FirebaseDatabase.instance;
@@ -300,10 +350,6 @@ class DatabaseCommunicator {
       print("Data write failed");
     });
   } */
-
-  void removeAllTiles() {
-    _removeData(tilesPath);
-  }
 
   void _removeData(String databasePath) async {
     FirebaseDatabase database = FirebaseDatabase.instance;

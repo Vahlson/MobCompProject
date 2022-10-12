@@ -245,8 +245,9 @@ class GeoMap {
         .toList();
 
     //TODO change _createPolygon to something else
-    List<Polygon> _blueprintPolygons = model
-        .getActiveBlueprint().getTiles()
+    List<Polygon>? _blueprintPolygons = model
+        .getActiveBlueprint()
+        ?.getTiles()
         .map((tile) => _createPolygon(
             ColoredTile(_getGeoCenter(tile.position), tile.color)))
         .toList();

@@ -5,7 +5,8 @@ import 'package:latlong2/latlong.dart';
 class Model {
   //Tiles of the whole map (at least what is visible)
   List<ColoredTile> _tiles = [];
-  Blueprint _activeBlueprint = Blueprint([]);
+  Blueprint? _activeBlueprint;
+  List<Blueprint> _availableBlueprints = [];
 
   void setTiles(List<ColoredTile> newTiles) {
     _tiles = newTiles;
@@ -20,9 +21,18 @@ class Model {
     return _tiles.toList();
   }
 
-//Returns a copy of the tiles list.
-  Blueprint getActiveBlueprint() {
+//Returns a copy of the active blueprint.
+  Blueprint? getActiveBlueprint() {
     return _activeBlueprint;
+  }
+
+//Returns a copy of the blueprints list
+  List<Blueprint> getAvailableBlueprints() {
+    return _availableBlueprints.toList();
+  }
+
+  void addBlueprint(Blueprint newBlueprint) {
+    return _availableBlueprints.add(newBlueprint);
   }
 }
 
@@ -52,13 +62,23 @@ class ColoredTile {
 
 class Blueprint {
   List<ColoredTile> _blueprintTiles = [];
-  String groupID = "";
+  String _blueprintID = "";
 
   List<ColoredTile> getTiles() {
     return _blueprintTiles.toList();
   }
 
-  Blueprint(this._blueprintTiles);
+  Blueprint(String id, {List<ColoredTile> blueprintTiles = const []}) {
+    _blueprintID = id;
+  }
 
-  Blueprint.fromMap(String geohash, Map<String, dynamic> data) {}
+  Blueprint.fromMap(String id, Map<String, dynamic> data) {}
+
+  String getBlueprintID() {
+    return _blueprintID;
+  }
+
+  void setTiles(List<ColoredTile> newTiles) {
+    _blueprintTiles = newTiles;
+  }
 }

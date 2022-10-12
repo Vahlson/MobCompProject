@@ -18,7 +18,7 @@ void main() {
         create: (context) => MapChangeNotifier(dbCom),
       ),
       ChangeNotifierProvider(
-        create: (context) => BlueprintsChangeNotifier(dbCom),
+        create: (context) => BlueprintChangeNotifier(dbCom),
       ),
     ],
     child: const MyApp(),
@@ -78,6 +78,16 @@ class _MyHomePageState extends State<MyHomePage> {
               _geoHasher.encode(
                   tap.tapPosition.longitude, tap.tapPosition.latitude,
                   precision: 8));
+
+          //TODO REMOVE!
+          Provider.of<BlueprintChangeNotifier>(context, listen: false)
+              .createNewBlueprint();
+
+          Provider.of<BlueprintChangeNotifier>(context, listen: false).addTile(
+              selectedColor,
+              _geoHasher.encode(
+                  tap.tapPosition.longitude, tap.tapPosition.latitude,
+                  precision: 8));
         }
         //});
       } else {
@@ -112,7 +122,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void initDatabase() async {
     await Provider.of<MapChangeNotifier>(context, listen: false).initialize();
-    await Provider.of<BlueprintsChangeNotifier>(context, listen: false)
+    await Provider.of<BlueprintChangeNotifier>(context, listen: false)
         .initialize();
   }
 
