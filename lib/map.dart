@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'coloredTile.dart';
+import 'main.dart';
 
 class GeoMap {
   GeoMap(this._mapController);
