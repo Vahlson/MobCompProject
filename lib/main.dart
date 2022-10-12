@@ -49,12 +49,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   late MapChangeNotifier mapNotifier;
   final MapController _mapController = MapController();
   late Stream<MapEvent> _mapStream;
   late GeoMap geomap;
-  Color selectedColor = Colors.blue;
+  Color selectedColor = Colors.black;
   num selectedOpacity = 1;
   final List<Color> colourPaletteHex = [
     Color(0xff8F4D7F),
@@ -88,17 +87,6 @@ class _MyHomePageState extends State<MyHomePage> {
     Color(0xffF0F0F0),
     Color(0xffF0F0F0).withOpacity(0),
   ];
-
-/*
-  static var colourPaletteHex = [
-    '8F4D7F','993538','994A00','997923','537917',
-    'EF81D3','FF595E','FF7B00','FFCA3A','8AC926',
-    'F9CDED','FFBDBF','FFCA99','FFEAB0','D0E9A8',
-    '112871','106D74','402E58','828282','000000',
-    '1D43BC','1AB5C1','6A4C93','CDCDCD','FFFFFF',
-    'A5B4E4','A3E1E6','C3B7D4','F0F0F0','',
-  ];
-*/
 
   //Move this
   GeoHasher _geoHasher = GeoHasher();
@@ -142,7 +130,31 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _paletteModalBottomSheet2(context) {
+  void setUpFirebase() async {
+    await Firebase.initializeApp();
+  }
+
+  @override
+  void initState() {
+    //db = DatabaseCommunicator();
+    //db.initFirebase();
+
+    // TODO: implement initState
+    initMap();
+
+    initDatabase();
+
+    super.initState();
+    //setUpFirebase();
+  }
+
+  void initDatabase() async {
+    await Provider.of<MapChangeNotifier>(context, listen: false).initialize();
+    await Provider.of<BlueprintChangeNotifier>(context, listen: false)
+        .initialize();
+  }
+
+  void _paletteModalBottomSheet(context) {
     showModalBottomSheet(
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
@@ -151,11 +163,14 @@ class _MyHomePageState extends State<MyHomePage> {
             topRight: Radius.circular(20.0),
           ),
         ),
+        isScrollControlled: true,
         context: context,
         builder: (BuildContext bc) {
           return Padding(
             padding: const EdgeInsets.all(32.0),
             child: GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
               //gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 48),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5),
@@ -193,32 +208,29 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  /* void initDatabase() async{
-    await Provider.of<DatabaseCommunicator>(context, listen: false).addTile
-  } */
-
-  void setUpFirebase() async {
-    await Firebase.initializeApp();
-  }
-
-  @override
-  void initState() {
-    //db = DatabaseCommunicator();
-    //db.initFirebase();
-
-    // TODO: implement initState
-    initMap();
-
-    initDatabase();
-
-    super.initState();
-    //setUpFirebase();
-  }
-
-  void initDatabase() async {
-    await Provider.of<MapChangeNotifier>(context, listen: false).initialize();
-    await Provider.of<BlueprintChangeNotifier>(context, listen: false)
-        .initialize();
+  void _showNavMenu(context) {
+    showModalBottomSheet(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            // <-- SEE HERE
+            topLeft: Radius.circular(20.0),
+            topRight: Radius.circular(20.0),
+          ),
+        ),
+        context: context,
+        builder: (BuildContext bc) {
+          return Wrap(
+            children: [Container(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  IconButton(onPressed: (){}, icon: const Icon(Icons.map))
+                ],
+              ),
+            )],
+          );
+        });
   }
 
   @override
@@ -226,10 +238,25 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("map"),
+        actions: [
+          IconButton(
+              icon: Icon((selectedOpacity == 1) ? Icons.water_drop : ((selectedOpacity == 0.5) ? Icons.opacity : Icons.water_drop_outlined)),
+              onPressed: () {
+                setState(() {
+                  if (selectedOpacity == 1) {
+                    selectedOpacity = 0.5;
+                  } else if (selectedOpacity == 0.5) {
+                    selectedOpacity = 0;
+                  } else {
+                    selectedOpacity = 1;
+                  }
+                });
+              }),
+        ],
       ),
       body: Center(
         child: Container(
-          height: 800,
+          height: 900,
           child: Consumer<MapChangeNotifier>(
             builder: (context, changeNotifier, child) {
               return geomap.showMap(changeNotifier.dbCom.model);
@@ -238,93 +265,25 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
         child: Row(
           children: [
-            IconButton(
-                icon: const Icon(Icons.palette),
-                onPressed: () {
-                  _paletteModalBottomSheet2(context);
-                }),
+            IconButton(icon: const Icon(Icons.menu), onPressed: () {
+              _showNavMenu(context);
+            }),
+            const Spacer(),
             IconButton(icon: const Icon(Icons.architecture), onPressed: () {}),
-            IconButton(
-                icon: const Icon(Icons.opacity),
-                onPressed: () {
-                  setState(() {
-                    if (selectedOpacity == 1) {
-                      selectedOpacity = 0.5;
-                    } else if (selectedOpacity == 0.5) {
-                      selectedOpacity = 0;
-                    } else {
-                      selectedOpacity = 1;
-                    }
-                  });
-                }),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: selectedColor,
         onPressed: () {
-          /* Provider.of<DatabaseCommunicator>(context, listen: false)
-              .removeAllTiles(); */
-
-          //db.clearLocalSafeStorage();
-          setState(() {
-            if (selectedColor == Colors.black) {
-              selectedColor = Colors.blue;
-            } else {
-              selectedColor = Colors.black;
-            }
-          });
+          _paletteModalBottomSheet(context);
         },
-        child: const Icon(Icons.check),
+        child: const Icon(Icons.palette),
       ),
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
-
-
-
-
-
-
-
-
-
-/*
-class DialKey extends StatelessWidget {
-  Color colour;
-  //final Color color = HexColor.fromHex('#aabbcc');
-
-  DialKey({required this.colour});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 48,
-        height: 48,
-        child: RadioListTile(value: colour,
-          groupValue: _MyHomePageState.selectedColor,
-          onChanged: onChanged),
-
-
-        /*
-        FloatingActionButton(
-          elevation: 0,
-          onPressed: () {
-
-          },
-          backgroundColor: colour,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            //children: [
-            //],
-          ),
-        ),
-        */
-      ),
-    );
-  }
-}
-*/
