@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:artmap/groups.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
@@ -53,10 +54,15 @@ class BlueprintChangeNotifier extends ChangeNotifier {
   void addTileToActive(Color color, String geohash) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref().child(dbCom.blueprintsPath);
+    print("HERE");
 
     //reference blueprint ID.
     String? activeBlueprintID =
         dbCom.model.getActiveBlueprint()?.getBlueprintID();
+    print("HERE2");
+
+    if (activeBlueprintID != null)
+      ("The active blueprint ID: $activeBlueprintID");
 
     //Add tile to database if we have a valid active blueprint
     if (activeBlueprintID != null) {
@@ -183,47 +189,91 @@ class DatabaseCommunicator {
     return subscription;
   }
 
-  //Generate events when anything in the user changes, such as the amount of blueprints changes
+  //Generate events when anything in the user database changes, such as the number of blueprints changes
   StreamSubscription<DatabaseEvent> listenToUserChanges(String userID) {
-    return listenToDataChange(usersPath + "/" + userID, _updateUserData);
+    return listenToDataChange(usersPath + "/" + userID, _updateUserModel);
   }
 
-  void _updateUserData(Map<String, dynamic> data) async {
+  void _updateUserModel(Map<String, dynamic> data) async {
     print(data);
     if (data != null) {
       Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+      Map<String, dynamic> groups =
+          Map<String, dynamic>.from(dataMap["groups"]);
+      List<String> groupIDs = groups.keys.toList();
+      print(groupIDs.toString());
 
-      print(dataMap["Groups"]);
-      /* List<Strings> groupIDs; WHAT I WANT
-      //Do something with the data
-      dataMap.keys.forEach((element) {
-        print(element.toString());
-      }); */
-
+      //Look in other places of the database to gather data and save to model.
+      _updateUserGroups(groupIDs);
+      _updateUserBlueprints(groupIDs);
     }
   }
 
-  /* Future<void> _getUsersBlueprints(String[] groupIDs) async {
-    final ref = FirebaseDatabase.instance.ref();
+  Future<void> _updateUserBlueprints(List<String> groupIDs) async {
+    final ref = FirebaseDatabase.instance.ref().child(blueprintsPath);
 
-    final snapshot = await ref.child(blueprintsPath).get();
-    if (snapshot.exists) {
-      //Do something when the data at this path changes.
-      final data = snapshot.value;
-      print(data);
-      if (data != null) {
-        Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
-        //Do something with the data
-        dataMap.keys.forEach((element) {
-          print(element.toString());
-        });
+    List<Blueprint> newBlueprintsList = [];
+
+    groupIDs.forEach((iD) async {
+      print(iD.toString());
+      DatabaseReference groupRef = ref.child(iD);
+      var snapshot = await groupRef.get();
+
+      if (snapshot.exists) {
+        //Do something when the data at this path changes.
+        final data = snapshot.value;
+        if (data != null) {
+          print("The data: " + data.toString());
+
+          Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+
+          //Add the blueprint to the model
+          Blueprint blueprint = Blueprint.fromMap(iD, dataMap);
+          newBlueprintsList.add(blueprint);
+        }
+      } else {
+        print('No data available.');
       }
-    } else {
-      print('No data available.');
-    } 
+    });
+
+    //Set users blueprint list to these blueprints
+    model.setUserBlueprints(newBlueprintsList);
 
     //print(data.runtimeType.toString());
-  } */
+  }
+
+  Future<void> _updateUserGroups(List<String> groupIDs) async {
+    final ref = FirebaseDatabase.instance.ref().child(groupsPath);
+
+    List<Group> newGroupsList = [];
+
+    groupIDs.forEach((iD) async {
+      print(iD.toString());
+      DatabaseReference groupRef = ref.child(iD);
+      var snapshot = await groupRef.get();
+
+      if (snapshot.exists) {
+        //Do something when the data at this path changes.
+        final data = snapshot.value;
+        if (data != null) {
+          print("The data: " + data.toString());
+
+          Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+
+          //Add the blueprint to the model
+          Group group = Group.fromMap(iD, dataMap);
+          newGroupsList.add(group);
+        }
+      } else {
+        print('No data available.');
+      }
+    });
+
+    //Set users blueprint list to these blueprints
+    model.setUserGroups(newGroupsList);
+
+    //print(data.runtimeType.toString());
+  }
 
 //SAFE STORAGE FUNCTIONS ----------------------------------------------
   void _saveSecureStringLocally(String key, String? userID) async {
@@ -257,6 +307,7 @@ class DatabaseCommunicator {
     _getAndroidOptions();
     String? userID = await _getLocalSecureString("uID");
     User currentUser;
+
     if (userID == null) {
       //Get new user ID
       userID = await _createNewUser();
@@ -268,6 +319,9 @@ class DatabaseCommunicator {
 
         //Create a personal blueprint for the user.
         _initPersonalBlueprint(userID);
+
+        //Listen to changes in the current users subdatabase
+        listenToUserChanges(userID);
       }
     } else {
       //We have the ID locally, meaning user exists
@@ -276,6 +330,8 @@ class DatabaseCommunicator {
       //TODO make sure userID exists in the database as well?
 
       //Retrieve saved blueprints on database and populate model.
+      //By listening to changes in the current users subdatabase
+      listenToUserChanges(userID);
 
       //Try to retrieve old active blueprint
       String? blueprintID = await _getLocalSecureString("activeBlueprintID");
@@ -283,39 +339,40 @@ class DatabaseCommunicator {
           await _getLocalSecureString("activeBlueprintName");
       if (blueprintID != null && blueprintName != null) {
         //We found old active blueprint, try to retrieve it
-        Blueprint oldActiveBlueprint = Blueprint(blueprintID, blueprintName);
-        changeActiveBlueprint(oldActiveBlueprint);
+        changeActiveBlueprint(blueprintID, blueprintName);
       } else {
         //We did not find old active blueprint set to personal
-        Blueprint personalBlueprint = Blueprint(userID, _personalBlueprintName);
-        changeActiveBlueprint(personalBlueprint);
+        changeActiveBlueprint(userID, _personalBlueprintName);
       }
     }
+
+    //TODO REMOVE
+    leaveAllGroups();
+    removeAllGroups();
+    removeAllBlueprints();
   }
 
   void _initPersonalBlueprint(String userID) {
-    Blueprint newBlueprint = Blueprint(userID, _personalBlueprintName);
+    //Blueprint newBlueprint = Blueprint(userID, _personalBlueprintName);
 
-    _createNewBlueprintOnDatabase(userID);
-    model.addBlueprintToUser(newBlueprint);
+    _createNewBlueprintOnDatabase(userID, _personalBlueprintName);
+    //model.setActiveBlueprint(userID);
     //Set this as the active one as we dont have any active blueprint in the beginning
-    changeActiveBlueprint(newBlueprint);
+    changeActiveBlueprint(userID, _personalBlueprintName);
   }
 
-  void changeActiveBlueprint(Blueprint blueprint) {
-    String blueprintID = blueprint.getBlueprintID();
-    String blueprintName = blueprint.getName();
-
+  void changeActiveBlueprint(String blueprintID, String blueprintName) {
     _saveSecureStringLocally("activeBlueprintID", blueprintID);
     _saveSecureStringLocally("activeBlueprintName", blueprintName);
 
-    model.setActiveBlueprint(blueprint);
+    model.setActiveBlueprint(blueprintID);
   }
 
-  void _createNewBlueprintOnDatabase(String key) async {
+  void _createNewBlueprintOnDatabase(String key, String name) async {
     //FirebaseDatabase database = FirebaseDatabase.instance;
     //DatabaseReference ref = database.ref().child(blueprintsPath);
-    _pushEntryWithExistingKey(blueprintsPath, key);
+    _pushEntryWithExistingKey(blueprintsPath, key,
+        postData: {"blueprintName": name});
 
     /* String? blueprintID =
         await _pushUniqueEntryUnderPath(dbCom.blueprintsPath);
@@ -354,15 +411,35 @@ class DatabaseCommunicator {
     };
 
     _pushEntryWithUniqeGeneratedKey(groupsPath, postData: newGroupData);
+
+    //Also create a matching blueprint for the group
+    _createNewBlueprintOnDatabase(groupID, groupName);
   }
 
   void joinGroup(String groupID) {
     String? currentUserID = model.getCurrentUser().getUserID();
     if (currentUserID != null) {
+      //TODO only join the group if it actually exists.
+
       _pushEntryWithExistingKey(usersPath + "/" + currentUserID + "/groups", "",
           postData: {groupID: true});
       print(usersPath + "/" + currentUserID + "/groups");
     }
+  }
+
+  void leaveAllGroups() {
+    String? uID = model.getCurrentUser().getUserID();
+    if (uID != null) {
+      _removeData(usersPath + "/" + uID + "/groups");
+    }
+  }
+
+  void removeAllGroups() {
+    _removeData(groupsPath);
+  }
+
+  void removeAllBlueprints() {
+    _removeData(blueprintsPath);
   }
 
   Future<String?> _createNewUser() async {

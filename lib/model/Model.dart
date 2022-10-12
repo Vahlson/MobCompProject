@@ -28,18 +28,23 @@ class Model {
     return _user.getActiveBlueprint();
   }
 
-  void addBlueprintToUser(Blueprint newBlueprint) {
-    _user.addBlueprint(newBlueprint);
+  void setUserBlueprints(List<Blueprint> newBlueprints) {
+    _user.setBlueprints(newBlueprints);
   }
 
-  void setActiveBlueprint(Blueprint newBlueprint) {
-    _user.setActiveBlueprint(newBlueprint);
+  void setUserGroups(List<Group> newGroups) {
+    _user.setGroups(newGroups);
+  }
+
+  void setActiveBlueprint(String blueprintID) {
+    _user.setActiveBlueprint(blueprintID);
   }
 }
 
 class User {
   Blueprint? _activeBlueprint;
   List<Blueprint> _availableBlueprints = [];
+  List<Group> _groups = [];
   String? _userID;
   //User(this._userID);
 
@@ -62,8 +67,21 @@ class User {
     return _activeBlueprint;
   }
 
-  void setActiveBlueprint(Blueprint newActiveBlueprint) {
-    _activeBlueprint = newActiveBlueprint;
+  void setActiveBlueprint(String blueprintID) {
+    Blueprint? newActiveBlueprint = getAvailableBlueprints().firstWhere(
+        (blueprint) => blueprint.getBlueprintID() == blueprintID, orElse: () {
+      if (_activeBlueprint != null) {
+        print('No matching element. Keeping currently active bluprint active');
+        return _activeBlueprint!;
+      } else {
+        print('No matching element. Doing nothing');
+        return Blueprint("", "");
+      }
+    });
+    if (newActiveBlueprint != null && newActiveBlueprint._blueprintID != "") {
+      print("New active blueprint is: " + newActiveBlueprint._name);
+      _activeBlueprint = newActiveBlueprint;
+    }
   }
 
 //Returns a copy of the blueprints list
@@ -71,8 +89,12 @@ class User {
     return _availableBlueprints.toList();
   }
 
-  void addBlueprint(Blueprint newBlueprint) {
-    return _availableBlueprints.add(newBlueprint);
+  void setBlueprints(List<Blueprint> newBlueprints) {
+    _availableBlueprints = newBlueprints;
+  }
+
+  void setGroups(List<Group> newGroups) {
+    _groups = newGroups;
   }
 }
 
@@ -106,7 +128,17 @@ class Blueprint {
     _name = name;
   }
 
-  Blueprint.fromMap(String id, Map<String, dynamic> data) {}
+  Blueprint.fromMap(String bluePrintID, Map<String, dynamic> data) {
+    _blueprintID = bluePrintID;
+    //_name = data["name"];
+
+    List<ColoredTile> newTilesList = [];
+    //Loop through each tile
+    data.forEach((geohash, colorMap) {
+      newTilesList.add(ColoredTile.fromMap(geohash, colorMap));
+    });
+    _blueprintTiles = newTilesList;
+  }
 
   String getBlueprintID() {
     return _blueprintID;
@@ -128,4 +160,11 @@ class Group {
   var description = "";
 
   Group(this.id, this.name, {this.description = ""});
+
+  Group.fromMap(String iD, Map<String, dynamic> data) {
+    id = iD;
+    name = data["name"];
+    memberCount = data["membercount"];
+    description = data["description"];
+  }
 }

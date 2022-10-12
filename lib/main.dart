@@ -127,8 +127,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     tap.tapPosition.longitude, tap.tapPosition.latitude,
                     precision: 8));
           } else {
-            Provider.of<BlueprintChangeNotifier>(context, listen: false)
-                .addBlueprint();
+            print("Adding to blueprint");
 
             Provider.of<BlueprintChangeNotifier>(context, listen: false)
                 .addTileToActive(
@@ -273,7 +272,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   Provider.of<MapChangeNotifier>(context, listen: false)
                       .dbCom
-                      .joinGroup("-NEBqxC5SUFD77_5z_uq");
+                      .joinGroup("-NEBsldj8C8UTOeaSnqP");
 
                   setState(() {
                     if (selectedOpacity == 1) {
