@@ -194,12 +194,28 @@ class DatabaseCommunicator {
     return listenToDataChange(usersPath + "/" + userID, _updateUserModel);
   }
 
+  Future<void> _initUserModel(String userID) async {
+    DatabaseReference ref =
+        FirebaseDatabase.instance.ref(usersPath + "/" + userID);
+    // Get the data once
+    DatabaseEvent event = await ref.once();
+    final data = event.snapshot.value;
+    if (data != null) {
+      Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+      //Do something with the data
+      _updateUserModel(dataMap);
+    }
+  }
+
   void _updateUserModel(Map<String, dynamic> data) async {
     print(data);
     if (data != null) {
       Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
-      Map<String, dynamic> groups =
-          Map<String, dynamic>.from(dataMap["groups"]);
+      Map<String, dynamic> groups = {};
+      if (dataMap["groups"] != null) {
+        groups = Map<String, dynamic>.from(dataMap["groups"]);
+      }
+
       List<String> groupIDs = groups.keys.toList();
       print(groupIDs.toString());
 
@@ -304,6 +320,13 @@ class DatabaseCommunicator {
 
 //Initializes a new user if needed.
   Future<void> _initUser() async {
+    //TODO REMOVE
+    leaveAllGroups();
+    removeAllGroups();
+    removeAllBlueprints();
+    clearLocalSafeStorage();
+    //----------
+
     _getAndroidOptions();
     String? userID = await _getLocalSecureString("uID");
     User currentUser;
@@ -317,11 +340,8 @@ class DatabaseCommunicator {
 
         _saveSecureStringLocally("uID", userID);
 
-        //Create a personal blueprint for the user.
-        _initPersonalBlueprint(userID);
-
-        //Listen to changes in the current users subdatabase
-        listenToUserChanges(userID);
+        //Retrieve saved data on database and populate model.
+        await _initUserModel(userID);
       }
     } else {
       //We have the ID locally, meaning user exists
@@ -329,9 +349,8 @@ class DatabaseCommunicator {
       model.setCurrentUser(currentUser);
       //TODO make sure userID exists in the database as well?
 
-      //Retrieve saved blueprints on database and populate model.
-      //By listening to changes in the current users subdatabase
-      listenToUserChanges(userID);
+      //Retrieve saved data on database and populate model.
+      await _initUserModel(userID);
 
       //Try to retrieve old active blueprint
       String? blueprintID = await _getLocalSecureString("activeBlueprintID");
@@ -339,6 +358,7 @@ class DatabaseCommunicator {
           await _getLocalSecureString("activeBlueprintName");
       if (blueprintID != null && blueprintName != null) {
         //We found old active blueprint, try to retrieve it
+        print(blueprintID + " " + blueprintName);
         changeActiveBlueprint(blueprintID, blueprintName);
       } else {
         //We did not find old active blueprint set to personal
@@ -346,14 +366,17 @@ class DatabaseCommunicator {
       }
     }
 
-    //TODO REMOVE
-    leaveAllGroups();
-    removeAllGroups();
-    removeAllBlueprints();
+    // listen to changes in the current user's subdatabase
+    //Needed to set the listener here and use initUserModel so we could wait on it,
+    //Although they do the same thing ones triggered since the listener is triggered directly.
+    if (userID != null) {
+      listenToUserChanges(userID);
+    }
   }
 
   void _initPersonalBlueprint(String userID) {
     //Blueprint newBlueprint = Blueprint(userID, _personalBlueprintName);
+    print("INIT PERSONAL");
 
     _createNewBlueprintOnDatabase(userID, _personalBlueprintName);
     //model.setActiveBlueprint(userID);
@@ -371,36 +394,10 @@ class DatabaseCommunicator {
   void _createNewBlueprintOnDatabase(String key, String name) async {
     //FirebaseDatabase database = FirebaseDatabase.instance;
     //DatabaseReference ref = database.ref().child(blueprintsPath);
+    print("CREATING NEW");
     _pushEntryWithExistingKey(blueprintsPath, key,
         postData: {"blueprintName": name});
-
-    /* String? blueprintID =
-        await _pushUniqueEntryUnderPath(dbCom.blueprintsPath);
-    if (blueprintID != null) {
-      Blueprint newBlueprint = Blueprint(blueprintID);
-      dbCom.model.addBlueprint(newBlueprint);
-
-      //Set this as the active one if we dont have an active blueprint
-      if (dbCom.model.getActiveBlueprint() == null) {
-        dbCom.model.setActiveBlueprint(newBlueprint);
-      }
-    } */
   }
-/* 
-  void getBlueprintFromDatabaseOnce(String? blueprintID) async{
-    if (blueprintID == null) return;
-
-    FirebaseDatabase database = FirebaseDatabase.instance;
-    DatabaseReference ref = database.ref().child(blueprintsPath);
-
-    //Add tile to database if we have a valid active blueprint
-
-      DatabaseReference activeBlueprintRef = ref.child(blueprintID);
-      final event = await ref.once(DatabaseEventType.value);
-    final username = event.snapshot.value?.username ?? 'Anonymous';
-    
-  }
- */
 
 //Create a new group on the database
   void addGroup(String groupName, String description) {
@@ -452,14 +449,12 @@ class DatabaseCommunicator {
     // Get a key for a new user.
     final newPostKey = ref.push().key;
 
-    final postData = {
-      'groups': "",
-    };
+    final postData = {"groups": null};
 
     // Write the new post's data simultaneously in the posts list and the
     // user's post list.
-    final Map<String, Map> updates = {};
-    updates['/$usersPath/$newPostKey'] = postData;
+/*     final Map<String, Map> updates = {};
+    updates['/$newPostKey'] = postData;
     //updates['/user-posts/$uid/$newPostKey'] = postData;
     //print("Här");
 
@@ -469,7 +464,22 @@ class DatabaseCommunicator {
     }).catchError((error) {
       // The write failed...
       print("Data write failed");
-    });
+    }); */
+
+    //Also create a matching blueprint for the group
+    if (newPostKey != null) {
+      DatabaseReference newEntryRef = ref.child(newPostKey).child("groups");
+
+      await newEntryRef.update({"dummy": true}).then((_) {
+        // Data saved successfully!
+        print("Data saved Successfully");
+      }).catchError((error) {
+        // The write failed...
+        print("Data write failed");
+      });
+
+      _initPersonalBlueprint(newPostKey);
+    }
 
     //return FirebaseDatabase.instance.ref().update(updates);
     return newPostKey;
@@ -511,6 +521,7 @@ class DatabaseCommunicator {
     //final Map<String, Map> updates = {};
     //updates['$key'] = postData;
     //updates['$newPostKey'] = postData;
+    print(databasePath + " /" + key);
 
     await newEntryRef.update(postData).then((_) {
       // Data saved successfully!

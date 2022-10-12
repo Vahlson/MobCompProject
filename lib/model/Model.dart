@@ -74,7 +74,7 @@ class User {
         print('No matching element. Keeping currently active bluprint active');
         return _activeBlueprint!;
       } else {
-        print('No matching element. Doing nothing');
+        print('No matching element called $blueprintID. Doing nothing');
         return Blueprint("", "");
       }
     });

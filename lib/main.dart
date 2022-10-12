@@ -127,8 +127,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     tap.tapPosition.longitude, tap.tapPosition.latitude,
                     precision: 8));
           } else {
-            print("Adding to blueprint");
-
             Provider.of<BlueprintChangeNotifier>(context, listen: false)
                 .addTileToActive(
                     selectedColor,
