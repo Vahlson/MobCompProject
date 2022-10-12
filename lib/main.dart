@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import 'model/Model.dart';
+import 'myGroupPage.dart';
 
 import 'map.dart';
 
@@ -245,7 +246,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   _paletteModalBottomSheet2(context);
                 }),
-            IconButton(icon: Icon(Icons.architecture), onPressed: () {}),
+            IconButton(icon: Icon(Icons.architecture), onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyGroupPage()),
+              );
+            }),
             IconButton(
                 icon: Icon(Icons.opacity),
                 onPressed: () {

@@ -18,10 +18,11 @@ class JoinGroup extends StatefulWidget{
   @override
   State<JoinGroup> createState() => _JoinGroupState();
 }
-TextEditingController textController = TextEditingController();
-String groupID = "";
+
 
 class _JoinGroupState extends State<JoinGroup> {
+  TextEditingController joinGroupTxtCtrl = TextEditingController();
+  String groupID = "";
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -47,10 +48,10 @@ class _JoinGroupState extends State<JoinGroup> {
                   style: const TextStyle(fontSize: 16),
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    labelText: 'Group code',
-                    hintText: 'Enter your group code',
+                    labelText: 'Join Group',
+                    hintText: 'Enter the group code',
                   ),
-                  controller: textController,
+                  controller: joinGroupTxtCtrl,
                 ),
               ),
             ),
@@ -58,7 +59,7 @@ class _JoinGroupState extends State<JoinGroup> {
                 onPressed: (){
                   setState(() {
                     //Todo: Add join group action
-                    groupID = textController.text;
+                    groupID = joinGroupTxtCtrl.text;
                   });
                 },
                 child: const Text("Join")
@@ -68,6 +69,68 @@ class _JoinGroupState extends State<JoinGroup> {
         ),
       ),
     );
+  }
+}
+
+class CreateGroup extends StatefulWidget{
+  const CreateGroup({super.key});
+  @override
+  State<CreateGroup> createState() => _CreateGroupState();
+}
+
+
+class _CreateGroupState extends State<CreateGroup> {
+  TextEditingController grpNameTxtCtrl = TextEditingController();
+  TextEditingController dscrpTxtCtrl = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+        child: const Text("Create Group"),
+        onPressed: () {
+          showDialog(
+              barrierDismissible: false,
+              context: context,
+              builder: (BuildContext context) {
+                return WillPopScope(
+                  onWillPop: () => Future.value(false),
+                  child: AlertDialog(
+                    scrollable: true,
+                    title: const Text('Create a new group'),
+                    content: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Form(
+                        child: Column(
+                          children:[
+                            TextFormField(
+                              controller: grpNameTxtCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Group Name:',
+                                icon: Icon(Icons.groups),
+                              ),
+                            ),
+                            TextFormField(
+                              controller: dscrpTxtCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Message',
+                                icon: Icon(Icons.description),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    actions: [
+                      ElevatedButton(
+                          child: const Text("Submit"),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          })
+                    ],
+                  ),
+                );
+              });
+        },
+      );
   }
 }
 
@@ -98,6 +161,7 @@ class GroupCard extends StatelessWidget {
               ),
               children: [
                 Padding(
+                  //Description
                   padding: const EdgeInsets.fromLTRB(8,0,8,0),
                   child: Text(
                     'Greyhound divisively hello coldly wonderfully marginally far upon excluding.Greyhound divisively hello coldly wonderfully marginally far upon excluding.Greyhound divisively hello coldly wonderfully marginally far upon excluding.',

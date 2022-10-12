@@ -3,8 +3,8 @@ import 'groups.dart';
 
 
 class MyGroupPage extends StatefulWidget {
-  const MyGroupPage({super.key, required this.title});
-  final String title;
+  const MyGroupPage({super.key});
+
 
   @override
   State<MyGroupPage> createState() => _MyGroupPageState();
@@ -15,17 +15,16 @@ class _MyGroupPageState extends State<MyGroupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text("My groups"),
       ),
       body: SingleChildScrollView(
         child: Column(
             children: const <Widget>[
               JoinGroup(),
+              CreateGroup(),
               GroupCard(),
               GroupCard(),
-              GroupCard(),
-              GroupCard(),
-              GroupCard(),
+
             ]
         ),
       ),
