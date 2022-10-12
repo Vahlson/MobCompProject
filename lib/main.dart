@@ -241,13 +241,13 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Row(
           children: [
             IconButton(
-                icon: Icon(Icons.palette),
+                icon: const Icon(Icons.palette),
                 onPressed: () {
                   _paletteModalBottomSheet2(context);
                 }),
-            IconButton(icon: Icon(Icons.architecture), onPressed: () {}),
+            IconButton(icon: const Icon(Icons.architecture), onPressed: () {}),
             IconButton(
-                icon: Icon(Icons.opacity),
+                icon: const Icon(Icons.opacity),
                 onPressed: () {
                   setState(() {
                     if (selectedOpacity == 1) {
