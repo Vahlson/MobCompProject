@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+
+import 'map.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,105 +14,266 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Map test',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final MapController _mapController = MapController();
+  late Stream<MapEvent> _mapStream;
+  late GeoMap geomap;
+  Color selectedColor = Colors.blue;
+  num selectedOpacity = 1;
+  final List<Color> colourPaletteHex = [
+    Color(0xff8F4D7F), Color(0xff993538), Color(0xff994A00), Color(0xff997923), Color(0xff537917),
+    Color(0xffEF81D3), Color(0xffFF595E), Color(0xffFF7B00), Color(0xffFFCA3A), Color(0xff8AC926),
+    Color(0xffF9CDED), Color(0xffFFBDBF), Color(0xffFFCA99), Color(0xffFFEAB0), Color(0xffD0E9A8),
+    Color(0xff112871), Color(0xff106D74), Color(0xff402E58), Color(0xff828282), Color(0xff000000),
+    Color(0xff1D43BC), Color(0xff1AB5C1), Color(0xff6A4C93), Color(0xffCDCDCD), Color(0xffFFFFFF),
+    Color(0xffA5B4E4), Color(0xffA3E1E6), Color(0xffC3B7D4), Color(0xffF0F0F0), Color(0xffF0F0F0).withOpacity(0),
+  ];
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+/*
+  static var colourPaletteHex = [
+    '8F4D7F','993538','994A00','997923','537917',
+    'EF81D3','FF595E','FF7B00','FFCA3A','8AC926',
+    'F9CDED','FFBDBF','FFCA99','FFEAB0','D0E9A8',
+    '112871','106D74','402E58','828282','000000',
+    '1D43BC','1AB5C1','6A4C93','CDCDCD','FFFFFF',
+    'A5B4E4','A3E1E6','C3B7D4','F0F0F0','',
+  ];
+*/
+
+
+
+
+
+
+
+  initMap(){
+    _mapStream = _mapController.mapEventStream;
+    geomap = GeoMap(_mapController);
+
+    //geomap.populateGrid();
+
+    //Checks for user taps
+    _mapStream.listen((event) {
+      if(event.source == MapEventSource.tap) {
+        MapEventTap tap = event as MapEventTap;
+        setState(() {
+          geomap.addPolygon(tap.tapPosition, selectedColor);
+        });
+      } else {
+        setState(() {
+          geomap.populateGrid();
+        });
+      }
     });
+  }
+
+  void _paletteModalBottomSheet2(context){
+    showModalBottomSheet(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only( // <-- SEE HERE
+            topLeft: Radius.circular(20.0),
+            topRight: Radius.circular(20.0),
+          ),
+        ),
+        context: context,
+        builder: (BuildContext bc){
+
+          return Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: GridView.builder(
+              //gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 48),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 5),
+              itemCount: colourPaletteHex.length,
+              itemBuilder: (context, index) {
+                return colorButton(colourPaletteHex[index]);
+                  //DialKey(colour: colourPaletteHex[index]);
+              },
+            ),
+          );
+        }
+    );
+  }
+
+  Widget colorButton (Color colorOnButton) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          selectedColor = colorOnButton;
+          Navigator.pop(context);
+        }
+      );},
+
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 48,
+        height: 48,
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: colorOnButton,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.grey.withOpacity(0.6), width: (colorOnButton==selectedColor)? 5: 0),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    initMap();
+
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text("map"),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
+        child: Container(
+          height: 800,
+          child: geomap.showMap(),
+        ),
+      ),
+
+      bottomNavigationBar: BottomAppBar(
+        child: Row(
+          children: [
+            IconButton(icon: Icon(Icons.palette),
+              onPressed: () {
+              _paletteModalBottomSheet2(context);
+
+              }),
+            IconButton(icon: Icon(Icons.architecture), onPressed: () {
+
+            }),
+            IconButton(icon: Icon(Icons.opacity), onPressed: () {
+
+              setState(() {
+                if(selectedOpacity == 1){
+                  selectedOpacity = 0.5;
+                } else if (selectedOpacity == 0.5){
+                  selectedOpacity = 0;
+                } else {
+                  selectedOpacity = 1;
+                }
+              }
+              );
+            }),
           ],
         ),
       ),
+
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        backgroundColor: selectedColor,
+        onPressed: () {
+
+          setState(() {
+            if(selectedColor == Colors.black){
+              selectedColor = Colors.blue;
+            } else {
+              selectedColor = Colors.black;
+            }
+          });
+
+        },
+        child: const Icon(Icons.check),
+      ),
+    );
+  }
+
+
+}
+
+//void OpenBottomSheet(){
+//}
+
+void _paletteModalBottomSheet(context){
+  showModalBottomSheet(
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.only( // <-- SEE HERE
+        topLeft: Radius.circular(20.0),
+        topRight: Radius.circular(20.0),
+      ),
+    ),
+      context: context,
+      builder: (BuildContext bc){
+        return Container(
+          child: new Wrap(
+            children: <Widget>[
+              new ListTile(
+                  leading: new Icon(Icons.palette),
+                  title: new Text('Choose colour'),
+              ),
+              new ListTile(
+                leading: new Icon(Icons.videocam),
+                title: new Text('Video'),
+                onTap: () => {},
+              ),
+            ],
+          ),
+        );
+      }
+  );
+
+}
+
+
+
+
+
+
+/*
+class DialKey extends StatelessWidget {
+  Color colour;
+  //final Color color = HexColor.fromHex('#aabbcc');
+
+  DialKey({required this.colour});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 48,
+        height: 48,
+        child: RadioListTile(value: colour,
+          groupValue: _MyHomePageState.selectedColor,
+          onChanged: onChanged),
+
+
+        /*
+        FloatingActionButton(
+          elevation: 0,
+          onPressed: () {
+
+          },
+          backgroundColor: colour,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            //children: [
+            //],
+          ),
+        ),
+        */
+      ),
     );
   }
 }
+*/
