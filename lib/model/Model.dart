@@ -5,15 +5,10 @@ import 'package:latlong2/latlong.dart';
 class Model {
   //Tiles of the whole map (at least what is visible)
   List<ColoredTile> _tiles = [];
-  Blueprint? _activeBlueprint;
-  List<Blueprint> _availableBlueprints = [];
+  User _user = User("");
 
   void setTiles(List<ColoredTile> newTiles) {
     _tiles = newTiles;
-  }
-
-  void setActiveBlueprint(Blueprint newActiveBlueprint) {
-    _activeBlueprint = newActiveBlueprint;
   }
 
 //Returns a copy of the tiles list.
@@ -21,9 +16,54 @@ class Model {
     return _tiles.toList();
   }
 
-//Returns a copy of the active blueprint.
+  void setCurrentUser(User user) {
+    _user = user;
+  }
+
+  User getCurrentUser() {
+    return _user;
+  }
+
+  Blueprint? getActiveBlueprint() {
+    return _user.getActiveBlueprint();
+  }
+
+  void addBlueprintToUser(Blueprint newBlueprint) {
+    _user.addBlueprint(newBlueprint);
+  }
+
+  void setActiveBlueprint(Blueprint newBlueprint) {
+    _user.setActiveBlueprint(newBlueprint);
+  }
+}
+
+class User {
+  Blueprint? _activeBlueprint;
+  List<Blueprint> _availableBlueprints = [];
+  String? _userID;
+  //User(this._userID);
+
+  User(this._userID);
+
+  User.fromMap(
+    String key,
+    Map<String, dynamic> data,
+  ) {
+    _availableBlueprints = data["Groups"];
+    _userID = data[key];
+  }
+
+  String? getUserID() {
+    return _userID;
+  }
+
+  //Returns a copy of the active blueprint.
   Blueprint? getActiveBlueprint() {
     return _activeBlueprint;
+  }
+
+  void setActiveBlueprint(Blueprint newActiveBlueprint) {
+    _activeBlueprint = newActiveBlueprint;
   }
 
 //Returns a copy of the blueprints list
@@ -33,15 +73,6 @@ class Model {
 
   void addBlueprint(Blueprint newBlueprint) {
     return _availableBlueprints.add(newBlueprint);
-  }
-}
-
-class User {
-  final String? _userID = null;
-  //User(this._userID);
-
-  String? getUserID() {
-    return _userID;
   }
 }
 
@@ -63,13 +94,16 @@ class ColoredTile {
 class Blueprint {
   List<ColoredTile> _blueprintTiles = [];
   String _blueprintID = "";
+  String _name = "";
 
   List<ColoredTile> getTiles() {
     return _blueprintTiles.toList();
   }
 
-  Blueprint(String id, {List<ColoredTile> blueprintTiles = const []}) {
+  Blueprint(String id, String name,
+      {List<ColoredTile> blueprintTiles = const []}) {
     _blueprintID = id;
+    _name = name;
   }
 
   Blueprint.fromMap(String id, Map<String, dynamic> data) {}
@@ -78,7 +112,20 @@ class Blueprint {
     return _blueprintID;
   }
 
+  String getName() {
+    return _name;
+  }
+
   void setTiles(List<ColoredTile> newTiles) {
     _blueprintTiles = newTiles;
   }
+}
+
+class Group {
+  var id = "";
+  var name = "";
+  var memberCount = 0;
+  var description = "";
+
+  Group(this.id, this.name, {this.description = ""});
 }

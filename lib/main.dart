@@ -103,6 +103,9 @@ class _MyHomePageState extends State<MyHomePage> {
   //Move this
   GeoHasher _geoHasher = GeoHasher();
 
+  //TODO Remove?
+  bool isBlueprintEditing = false;
+
   initMap() {
     _mapStream = _mapController.mapEventStream;
     geomap = GeoMap(_mapController);
@@ -117,21 +120,23 @@ class _MyHomePageState extends State<MyHomePage> {
         //Change this to just publishing tile to database
         if (geomap.isValidTilePosition(
             tap.tapPosition.latitude, tap.tapPosition.longitude)) {
-          Provider.of<MapChangeNotifier>(context, listen: false).addTile(
-              selectedColor,
-              _geoHasher.encode(
-                  tap.tapPosition.longitude, tap.tapPosition.latitude,
-                  precision: 8));
+          if (!isBlueprintEditing) {
+            Provider.of<MapChangeNotifier>(context, listen: false).addTile(
+                selectedColor,
+                _geoHasher.encode(
+                    tap.tapPosition.longitude, tap.tapPosition.latitude,
+                    precision: 8));
+          } else {
+            Provider.of<BlueprintChangeNotifier>(context, listen: false)
+                .addBlueprint();
 
-          //TODO REMOVE!
-          Provider.of<BlueprintChangeNotifier>(context, listen: false)
-              .createNewBlueprint();
-
-          Provider.of<BlueprintChangeNotifier>(context, listen: false).addTile(
-              selectedColor,
-              _geoHasher.encode(
-                  tap.tapPosition.longitude, tap.tapPosition.latitude,
-                  precision: 8));
+            Provider.of<BlueprintChangeNotifier>(context, listen: false)
+                .addTileToActive(
+                    selectedColor,
+                    _geoHasher.encode(
+                        tap.tapPosition.longitude, tap.tapPosition.latitude,
+                        precision: 8));
+          }
         }
         //});
       } else {
@@ -215,6 +220,14 @@ class _MyHomePageState extends State<MyHomePage> {
     //setUpFirebase();
   }
 
+  @override
+  void dispose() {
+    Provider.of<MapChangeNotifier>(context, listen: false).unsubscribe();
+    Provider.of<BlueprintChangeNotifier>(context, listen: false).unsubscribe();
+
+    super.dispose();
+  }
+
   void initDatabase() async {
     await Provider.of<MapChangeNotifier>(context, listen: false).initialize();
     await Provider.of<BlueprintChangeNotifier>(context, listen: false)
@@ -226,6 +239,9 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("map"),
+        backgroundColor: isBlueprintEditing
+            ? Color.fromRGBO(0, 0, 255, 1)
+            : Color.fromRGBO(255, 0, 0, 1),
       ),
       body: Center(
         child: Container(
@@ -245,10 +261,20 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   _paletteModalBottomSheet2(context);
                 }),
-            IconButton(icon: Icon(Icons.architecture), onPressed: () {}),
+            IconButton(
+                icon: Icon(Icons.architecture),
+                onPressed: () {
+                  setState(() {
+                    isBlueprintEditing = !isBlueprintEditing;
+                  });
+                }),
             IconButton(
                 icon: Icon(Icons.opacity),
                 onPressed: () {
+                  Provider.of<MapChangeNotifier>(context, listen: false)
+                      .dbCom
+                      .joinGroup("-NEBqxC5SUFD77_5z_uq");
+
                   setState(() {
                     if (selectedOpacity == 1) {
                       selectedOpacity = 0.5;
@@ -268,6 +294,9 @@ class _MyHomePageState extends State<MyHomePage> {
           /* Provider.of<DatabaseCommunicator>(context, listen: false)
               .removeAllTiles(); */
 
+          Provider.of<MapChangeNotifier>(context, listen: false)
+              .dbCom
+              .addGroup("Cool group", "A cool group you should join");
           //db.clearLocalSafeStorage();
           setState(() {
             if (selectedColor == Colors.black) {

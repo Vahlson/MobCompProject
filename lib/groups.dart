@@ -1,23 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-//TODO: group here
-// class group {
-//   var id="";
-//   var name = "";
-//   var memberCount = "";
-//   var description = "";
-//   var map;
-//
-//   group(this.id, this.name, this.memberCount,this.description,this.map);
-// }
-
-
-class JoinGroup extends StatefulWidget{
+class JoinGroup extends StatefulWidget {
   const JoinGroup({super.key});
   @override
   State<JoinGroup> createState() => _JoinGroupState();
 }
+
 TextEditingController textController = TextEditingController();
 String groupID = "";
 
@@ -26,7 +15,7 @@ class _JoinGroupState extends State<JoinGroup> {
   Widget build(BuildContext context) {
     return Card(
       elevation: 5,
-      margin: const EdgeInsets.fromLTRB(32,32,32,16),
+      margin: const EdgeInsets.fromLTRB(32, 32, 32, 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -34,7 +23,7 @@ class _JoinGroupState extends State<JoinGroup> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween ,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: Padding(
@@ -55,14 +44,13 @@ class _JoinGroupState extends State<JoinGroup> {
               ),
             ),
             ElevatedButton(
-                onPressed: (){
+                onPressed: () {
                   setState(() {
                     //Todo: Add join group action
                     groupID = textController.text;
                   });
                 },
-                child: const Text("Join")
-            ),
+                child: const Text("Join")),
             //Text(displayText,style: const TextStyle(fontSize: 20),),
           ],
         ),
@@ -78,27 +66,30 @@ class GroupCard extends StatelessWidget {
     return Center(
       child: Card(
         elevation: 5,
-        margin: const EdgeInsets.fromLTRB(32,16,32,16),
+        margin: const EdgeInsets.fromLTRB(32, 16, 32, 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
-            Image.network('https://thumbs.gfycat.com/NiftyFlusteredAstarte-size_restricted.gif'),
+            Image.network(
+                'https://thumbs.gfycat.com/NiftyFlusteredAstarte-size_restricted.gif'),
             ExpansionTile(
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              title: const Text('Group Name',
+              title: const Text(
+                'Group Name',
                 style: TextStyle(fontSize: 22),
               ),
-              subtitle: Text('Member: 56',
+              subtitle: Text(
+                'Member: 56',
                 style: TextStyle(
                   color: Colors.black.withOpacity(0.4),
                 ),
               ),
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(8,0,8,0),
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
                   child: Text(
                     'Greyhound divisively hello coldly wonderfully marginally far upon excluding.Greyhound divisively hello coldly wonderfully marginally far upon excluding.Greyhound divisively hello coldly wonderfully marginally far upon excluding.',
                     style: TextStyle(color: Colors.black.withOpacity(0.8)),
@@ -108,24 +99,23 @@ class GroupCard extends StatelessWidget {
                   alignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Group Code: ABCDEFGHIJKLMNOPQRST',
-                        style: TextStyle(color: Colors.black.withOpacity(0.4),
-                            fontSize: 11
-                        )
-                    ),
+                        style: TextStyle(
+                            color: Colors.black.withOpacity(0.4),
+                            fontSize: 11)),
                     OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          //minimumSize: const Size(3,40),
-                        ),
+                            //minimumSize: const Size(3,40),
+                            ),
                         onPressed: () {
                           // Perform some action
                         },
                         child: const FittedBox(
                           fit: BoxFit.fitHeight,
-                          child: Text("Leave",
-                            style: TextStyle(letterSpacing: 1,fontSize: 16),
+                          child: Text(
+                            "Leave",
+                            style: TextStyle(letterSpacing: 1, fontSize: 16),
                           ),
-                        )
-                    ),
+                        )),
                   ],
                 ),
               ],
