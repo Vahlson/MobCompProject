@@ -258,6 +258,7 @@ class GeoMap {
         center: _userPosition,
         zoom: 18,
         maxZoom: 22,
+        interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.doubleTapZoom,
       ),
       mapController: _mapController,
       /*nonRotatedChildren: [
