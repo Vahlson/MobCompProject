@@ -305,17 +305,23 @@ class _MyHomePageState extends State<MyHomePage> {
             }),
             const Spacer(),
             IconButton(
-                icon: Container(
-                  decoration: BoxDecoration(
-                    color: penMode ? Colors.transparent : Colors.black26,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: penMode ? Colors.transparent : Colors.black26,
-                      width: 6,
-                      strokeAlign: StrokeAlign.outside
-                    )
+                icon: Center(
+                  child: Stack(
+                      children: <Widget>[
+                        const Center(child: Icon(CustomIcons.eraser, size: 18)),
+                        Center(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 400),
+                            height: penMode ? 0 : 36,
+                            width: penMode ? 0 : 36,
+                            decoration: const BoxDecoration(
+                              color: Colors.black26,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        )
+                      ],
                   ),
-                  child: const Icon(CustomIcons.eraser, size: 18),
                 ),
                 onPressed: () {
                   setState(() {
