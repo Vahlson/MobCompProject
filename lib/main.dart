@@ -204,7 +204,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-
     initMap();
 
     initDatabase();
@@ -239,12 +238,19 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Container(
           height: 800,
-          child: Consumer<MapChangeNotifier>(
+          child: Consumer2<MapChangeNotifier, BlueprintChangeNotifier>(builder:
+              (context, mapChangeNotifier, blueprintChangeNotifier, widget) {
+            //This consumes the notifying of two different notifiers. Splitting them up like this allows for more flexibility in what to rebuild, when.
+            print("REBUILDING");
+            return geomap.showMap(mapChangeNotifier.dbCom.model);
+          }),
+          /* //OLD
+          Consumer<MapChangeNotifier>(
             builder: (context, changeNotifier, child) {
               print("REBUILDING");
               return geomap.showMap(changeNotifier.dbCom.model);
             },
-          ),
+          ), */
         ),
       ),
       bottomNavigationBar: BottomAppBar(
