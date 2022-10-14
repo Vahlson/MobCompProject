@@ -105,7 +105,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   //TODO Remove?
 
-
   initMap() {
     _mapStream = _mapController.mapEventStream;
     geomap = GeoMap(_mapController);
@@ -128,7 +127,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     precision: 8));
           } else {
             Provider.of<BlueprintChangeNotifier>(context, listen: false)
-                .addTileToActive(
+                .addTileToActiveBlueprint(
                     selectedColor,
                     _geoHasher.encode(
                         tap.tapPosition.longitude, tap.tapPosition.latitude,
@@ -270,7 +269,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   Provider.of<MapChangeNotifier>(context, listen: false)
                       .dbCom
-                      .joinGroup("-NEBsldj8C8UTOeaSnqP");
+                      .joinGroup("-NELacx8HmkaMl1xtjO8");
 
                   setState(() {
                     if (selectedOpacity == 1) {
