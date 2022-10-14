@@ -30,6 +30,8 @@ class GeoMap {
   List<Polygon> _drawableArea = [];
   late LatLngBounds _drawableBounds;
 
+  double selectedOpacity = 1;
+
   Future<void> initGeoMap() async {
     //Location
     Location location = Location();
@@ -54,8 +56,9 @@ class GeoMap {
     }
 
     location.onLocationChanged.listen((LocationData userLocation) {
-      _userPosition =
-          LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
+      _userPosition = LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
+
+      _showDrawableArea();
     });
 
     LocationData userLocation = await location.getLocation();
@@ -72,7 +75,6 @@ class GeoMap {
     userPosition =
         LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0); */
     _mapController.move(_userPosition, _mapController.zoom);
-    print("Centering");
   }
 
   LatLng _getGeoCenter(LatLng latlng) {
@@ -170,7 +172,6 @@ class GeoMap {
 
       _gridY = newGridY;
 
-      _showDrawableArea();
     } else {
       _gridX = [];
       _gridY = [];
@@ -242,7 +243,7 @@ class GeoMap {
     List<Polygon> _polygons = model
         .getTiles()
         .map((tile) => _createPolygon(
-            ColoredTile(_getGeoCenter(tile.position), tile.color)))
+            ColoredTile(_getGeoCenter(tile.position), tile.color.withOpacity(selectedOpacity))))
         .toList();
 
     //TODO change _createPolygon to something else

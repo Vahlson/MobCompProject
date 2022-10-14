@@ -1,10 +1,12 @@
 import 'package:artmap/DatabaseCommunicator.dart';
+import 'package:artmap/myGroupPage.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import 'model/Model.dart';
+import 'opacityIcons.dart';
 
 import 'map.dart';
 
@@ -54,7 +56,6 @@ class _MyHomePageState extends State<MyHomePage> {
   late Stream<MapEvent> _mapStream;
   late GeoMap geomap;
   Color selectedColor = Colors.black;
-  num selectedOpacity = 1;
   final List<Color> colourPaletteHex = [
     Color(0xff8F4D7F),
     Color(0xff993538),
@@ -158,7 +159,6 @@ class _MyHomePageState extends State<MyHomePage> {
     showModalBottomSheet(
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
-            // <-- SEE HERE
             topLeft: Radius.circular(20.0),
             topRight: Radius.circular(20.0),
           ),
@@ -212,7 +212,6 @@ class _MyHomePageState extends State<MyHomePage> {
     showModalBottomSheet(
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
-            // <-- SEE HERE
             topLeft: Radius.circular(20.0),
             topRight: Radius.circular(20.0),
           ),
@@ -221,11 +220,40 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (BuildContext bc) {
           return Wrap(
             children: [Container(
-              padding: const EdgeInsets.all(32.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(onPressed: (){}, icon: const Icon(Icons.map))
+                  //const Text("Navigate to"),
+                  TextButton.icon(
+                      onPressed: (){
+                        Navigator.pop(context);
+                      },
+                      /*style: TextButton.styleFrom(
+                        foregroundColor: Colors.black,
+                      ),*/
+                      icon: const Icon(Icons.map),
+                      label: Row(children: const [Text("Map")])),
+                  TextButton.icon(
+                      onPressed: (){
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => const MyGroupPage(title: "group"),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.black,
+                      ),
+                      icon: const Icon(Icons.group),
+                      label: Row(children: const [Text("Groups")])),
+                  TextButton.icon(
+                      onPressed: (){},
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.black,
+                      ),
+                      icon: const Icon(Icons.architecture),
+                      label: Row(children: const [Text("Edit Blueprints")])),
                 ],
               ),
             )],
@@ -241,15 +269,15 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: [
           IconButton(
             //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
-              icon: Icon((selectedOpacity == 1) ? Icons.water_drop : ((selectedOpacity == 0.5) ? Icons.opacity : Icons.water_drop_outlined)),
+              icon: Icon((geomap.selectedOpacity == 1) ? OpacityIcons.humidity_high : ((geomap.selectedOpacity == 0.5) ? OpacityIcons.humidity_mid : OpacityIcons.humidity_low),),
               onPressed: () {
                 setState(() {
-                  if (selectedOpacity == 1) {
-                    selectedOpacity = 0.5;
-                  } else if (selectedOpacity == 0.5) {
-                    selectedOpacity = 0;
+                  if (geomap.selectedOpacity == 1) {
+                    geomap.selectedOpacity = 0.5;
+                  } else if (geomap.selectedOpacity == 0.5) {
+                    geomap.selectedOpacity = 0;
                   } else {
-                    selectedOpacity = 1;
+                    geomap.selectedOpacity = 1;
                   }
                 });
               }),
