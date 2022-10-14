@@ -115,7 +115,7 @@ class ColoredTile {
 
 class Blueprint {
   List<ColoredTile> _blueprintTiles = [];
-  String _blueprintID = "";
+  late String _blueprintID;
   String _name = "";
 
   List<ColoredTile> getTiles() {
@@ -130,17 +130,26 @@ class Blueprint {
 
   Blueprint.fromMap(String bluePrintID, Map<String, dynamic> data) {
     _blueprintID = bluePrintID;
-    //_name = data["name"];
+    _name = data["blueprintName"];
 
-    List<ColoredTile> newTilesList = [];
-    //Loop through each tile
-    data.forEach((geohash, colorMap) {
-      newTilesList.add(ColoredTile.fromMap(geohash, colorMap));
-    });
-    _blueprintTiles = newTilesList;
+    print("LOLOLOL ${data["tiles"]}");
+
+    if (data["tiles"] != null && data["tiles"] != false) {
+      Map<String, dynamic> tilesMap =
+          Map<String, dynamic>.from(data["tiles"] as Map);
+
+      List<ColoredTile> newTilesList = tilesMap.keys
+          .map((geohash) => ColoredTile.fromMap(geohash, tilesMap[geohash]))
+          .toList();
+      //Loop through each tile
+      data.forEach((geohash, colorMap) {
+        newTilesList.add(ColoredTile.fromMap(geohash, colorMap));
+      });
+      _blueprintTiles = newTilesList;
+    }
   }
 
-  String getBlueprintID() {
+  String? getBlueprintID() {
     return _blueprintID;
   }
 
