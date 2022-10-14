@@ -191,6 +191,7 @@ class _MyHomePageState extends State<MyHomePage> {
       onTap: () {
         setState(() {
           selectedColor = colorOnButton;
+          penMode = true;
           Navigator.pop(context);
         });
       },
@@ -303,10 +304,23 @@ class _MyHomePageState extends State<MyHomePage> {
               _showNavMenu(context);
             }),
             const Spacer(),
-            IconButton(icon: penMode ? const Icon(Icons.edit) : const Icon(CustomIcons.eraser, size: 18,), onPressed: () {
-              setState(() {
-                penMode = !penMode;
-              });
+            IconButton(
+                icon: Container(
+                  decoration: BoxDecoration(
+                    color: penMode ? Colors.transparent : Colors.black26,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: penMode ? Colors.transparent : Colors.black26,
+                      width: 6,
+                      strokeAlign: StrokeAlign.outside
+                    )
+                  ),
+                  child: const Icon(CustomIcons.eraser, size: 18),
+                ),
+                onPressed: () {
+                  setState(() {
+                    penMode = !penMode;
+                  });
             }),
             IconButton(icon: const Icon(Icons.architecture), onPressed: () {}),
           ],
