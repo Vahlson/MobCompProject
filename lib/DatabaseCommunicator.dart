@@ -155,8 +155,8 @@ class DatabaseCommunicator {
   //PREFER USING THIS OVER GET BECAUSE ITS CHEAPER (IN MONEY IT DOESN'T COST AS MUCH)
   //This is called once when the listener is attached and then everytime it changes.
   StreamSubscription<DatabaseEvent> listenToDataChange(String databasePath,
-      Function(String?, Map<String, dynamic>) customCallback,
-      {String? key}) {
+      Function(String?, Map<String, dynamic>, Function?) customCallback,
+      {String? key, Function? uiCallback}) {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference databaseRef = database.ref(databasePath);
     if (key != null) databaseRef = databaseRef.child(key);
@@ -169,7 +169,7 @@ class DatabaseCommunicator {
       if (data != null) {
         Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
         //Do something with the data
-        customCallback(key, dataMap);
+        customCallback(key, dataMap, uiCallback);
       }
     });
 
@@ -179,8 +179,9 @@ class DatabaseCommunicator {
   //Generate events when anything in the user database changes, such as the number of blueprints changes
   Future<StreamSubscription<DatabaseEvent>> listenToUserChanges(String userID,
       {Function? uiCallback}) async {
-    StreamSubscription<DatabaseEvent> newSub =
-        listenToDataChange(usersPath, _updateUserModel, key: userID);
+    StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
+        usersPath, _updateUserModel,
+        key: userID, uiCallback: uiCallback);
     //databaseSubscriptions.add(newSub);
     return newSub;
   }
@@ -190,15 +191,16 @@ class DatabaseCommunicator {
       {Function? uiCallback}) {
     StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
         blueprintsPath, _updateActiveBlueprintModel,
-        key: blueprintID);
+        key: blueprintID, uiCallback: uiCallback);
     //databaseSubscriptions.add(newSub);
     return newSub;
   }
 
   StreamSubscription<DatabaseEvent> listenToMapTilesChange(
       {Function? uiCallback}) {
-    StreamSubscription<DatabaseEvent> newSub =
-        listenToDataChange(tilesPath, _updateTilesModel);
+    StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
+        tilesPath, _updateTilesModel,
+        uiCallback: uiCallback);
     //databaseSubscriptions.add(newSub);
     return newSub;
   }
@@ -232,12 +234,12 @@ class DatabaseCommunicator {
     if (data != null) {
       Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
       //Do something with the data
-      await _updateUserModel(userID, dataMap);
+      await _updateUserModel(userID, dataMap, () {});
     }
   }
 
   Future<void> _updateUserModel(String? userID, Map<String, dynamic> data,
-      {Function? uiCallback}) async {
+      Function? onModelUpdateCallback) async {
     //print("What is this:" + data.keys.toString());
     if (data != null) {
       Map<String, dynamic> dataMap = Map<String, dynamic>.from(data);
@@ -251,9 +253,9 @@ class DatabaseCommunicator {
 
       //SAVING TO MODEL
       //Look in other places of the database to gather data and save to model.
-      await _updateUserGroups(userID, groups, uiCallback: uiCallback);
-      await _updateUserBlueprintsListModel(userID, groups,
-          uiCallback: uiCallback);
+      await _updateUserGroups(userID, groups, onModelUpdateCallback);
+      await _updateUserBlueprintsListModel(
+          userID, groups, onModelUpdateCallback);
 
       if (dataMap["activeBlueprintID"] != null &&
           dataMap["activeBlueprintID"] != false) {
@@ -268,8 +270,9 @@ class DatabaseCommunicator {
 
 //Updates the model of the active blueprint
   Future<void> _updateActiveBlueprintModel(
-      String? _, Map<String, dynamic> blueprintData,
-      {Function? uiCallback}) async {
+      String? _,
+      Map<String, dynamic> blueprintData,
+      Function? onModelUpdateCallback) async {
     String? blueprintID = model.getActiveBlueprint()?.getBlueprintID();
     print("BLUEPRINT DATA: $blueprintData");
     if (blueprintID != null) {
@@ -291,7 +294,7 @@ class DatabaseCommunicator {
         //Reset active blueprint to be this new version.
         model.setUserBlueprints(availableBlueprints);
 
-        if (uiCallback != null) uiCallback();
+        if (onModelUpdateCallback != null) onModelUpdateCallback();
       } else {
         print("ERROR: There is no user");
       }
@@ -299,9 +302,8 @@ class DatabaseCommunicator {
     //print(data.runtimeType.toString());
   }
 
-  Future<void> _updateUserBlueprintsListModel(
-      String? userID, Map<String, dynamic> groups,
-      {Function? uiCallback}) async {
+  Future<void> _updateUserBlueprintsListModel(String? userID,
+      Map<String, dynamic> groups, Function? onModelUpdateCallback) async {
     final ref = FirebaseDatabase.instance.ref().child(blueprintsPath);
 
     //BLUEPRINTS
@@ -346,7 +348,7 @@ class DatabaseCommunicator {
 
     print("TJOOOOO ${newBlueprintsList}");
     //print(data.runtimeType.toString());
-    if (uiCallback != null) uiCallback();
+    if (onModelUpdateCallback != null) onModelUpdateCallback();
   }
 
 /* 
@@ -399,7 +401,7 @@ class DatabaseCommunicator {
   } */
 
   Future<void> _updateUserGroups(String? userID, Map<String, dynamic> groups,
-      {Function? uiCallback}) async {
+      Function? onModelUpdateCallback) async {
     final ref = FirebaseDatabase.instance.ref().child(groupsPath);
 
     List<String> groupIDs = groups.keys.toList();
@@ -431,11 +433,11 @@ class DatabaseCommunicator {
     model.setUserGroups(newGroupsList);
 
     //print(data.runtimeType.toString());
-    if (uiCallback != null) uiCallback();
+    if (onModelUpdateCallback != null) onModelUpdateCallback();
   }
 
-  void _updateTilesModel(String? _, Map<String, dynamic> data,
-      {Function? uiCallback}) {
+  void _updateTilesModel(
+      String? _, Map<String, dynamic> data, Function? onModelUpdateCallback) {
     List<ColoredTile> newTilesList = [];
 
     data.forEach((key, value) {
@@ -448,7 +450,8 @@ class DatabaseCommunicator {
 
     model.setTiles(newTilesList);
     //Notify the ui that the database has changed.
-    if (uiCallback != null) uiCallback();
+    print("THE CALLBACK $onModelUpdateCallback");
+    if (onModelUpdateCallback != null) onModelUpdateCallback();
   }
 
 //SAFE STORAGE FUNCTIONS --------------------------------------------------------------------------

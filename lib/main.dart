@@ -204,10 +204,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    //db = DatabaseCommunicator();
-    //db.initFirebase();
 
-    // TODO: implement initState
     initMap();
 
     initDatabase();
@@ -244,6 +241,7 @@ class _MyHomePageState extends State<MyHomePage> {
           height: 800,
           child: Consumer<MapChangeNotifier>(
             builder: (context, changeNotifier, child) {
+              print("REBUILDING");
               return geomap.showMap(changeNotifier.dbCom.model);
             },
           ),
