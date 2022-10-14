@@ -1,17 +1,18 @@
-// Place fonts/opacityIcons.ttf in your fonts/ directory and
+// Place fonts/customIcons.ttf in your fonts/ directory and
 // add the following to your pubspec.yaml
 // flutter:
 //   fonts:
-//    - family: opacityIcons
+//    - family: customIcons
 //      fonts:
-//       - asset: fonts/opacityIcons.ttf
+//       - asset: fonts/customIcons.ttf
 import 'package:flutter/widgets.dart';
 
-class OpacityIcons {
-  OpacityIcons._();
+class CustomIcons {
+  CustomIcons._();
 
-  static const String _fontFamily = 'opacityIcons';
+  static const String _fontFamily = 'customIcons';
 
+  static const IconData eraser = IconData(0xe903, fontFamily: _fontFamily);
   static const IconData humidity_mid = IconData(0xe902, fontFamily: _fontFamily);
   static const IconData humidity_low = IconData(0xe900, fontFamily: _fontFamily);
   static const IconData humidity_high = IconData(0xe901, fontFamily: _fontFamily);

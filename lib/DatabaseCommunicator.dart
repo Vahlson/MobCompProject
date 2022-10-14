@@ -105,13 +105,18 @@ class MapChangeNotifier extends ChangeNotifier {
   //Uses transactions to change data that might get corrupted due to concurrent changes.
   //SUCH AS: editing a blot on the map.
   //It seems that a transaction can both get and post data in one go which should be CHEAPER $$$$$$ and also handles concurrency issues.
-  void addTile(Color color, String geohash) async {
+  void addTile(Color color, String geohash, bool penMode) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref().child(dbCom.tilesPath);
     DatabaseReference newTileRef = ref.child(geohash);
     //print("newtile: " + newTileRef.path);
 
-    await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
+    //Check if user wants to color or clear tile
+    if(penMode){
+      await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
+    } else {
+      await newTileRef.remove();
+    }
   }
 
   void removeAllTiles() {

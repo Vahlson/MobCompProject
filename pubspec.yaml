@@ -100,6 +100,6 @@ flutter:
   # see https://flutter.dev/custom-fonts/#from-packages
 
   fonts:
-    - family: opacityIcons
+    - family: customIcons
       fonts:
-          - asset: assets/icons/opacityIcons.ttf
+          - asset: assets/icons/customIcons.ttf

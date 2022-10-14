@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import 'model/Model.dart';
-import 'opacityIcons.dart';
+import 'customIcons.dart';
 
 import 'map.dart';
 
@@ -56,6 +56,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late Stream<MapEvent> _mapStream;
   late GeoMap geomap;
   Color selectedColor = Colors.black;
+  bool penMode = true;
+
   final List<Color> colourPaletteHex = [
     Color(0xff8F4D7F),
     Color(0xff993538),
@@ -110,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
               selectedColor,
               _geoHasher.encode(
                   tap.tapPosition.longitude, tap.tapPosition.latitude,
-                  precision: 8));
+                  precision: 8), penMode);
 
           //TODO REMOVE!
           Provider.of<BlueprintChangeNotifier>(context, listen: false)
@@ -269,7 +271,7 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: [
           IconButton(
             //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
-              icon: Icon((geomap.selectedOpacity == 1) ? OpacityIcons.humidity_high : ((geomap.selectedOpacity == 0.5) ? OpacityIcons.humidity_mid : OpacityIcons.humidity_low),),
+              icon: Icon((geomap.selectedOpacity == 1) ? CustomIcons.humidity_high : ((geomap.selectedOpacity == 0.5) ? CustomIcons.humidity_mid : CustomIcons.humidity_low),),
               onPressed: () {
                 setState(() {
                   if (geomap.selectedOpacity == 1) {
@@ -301,6 +303,11 @@ class _MyHomePageState extends State<MyHomePage> {
               _showNavMenu(context);
             }),
             const Spacer(),
+            IconButton(icon: penMode ? const Icon(Icons.edit) : const Icon(CustomIcons.eraser, size: 18,), onPressed: () {
+              setState(() {
+                penMode = !penMode;
+              });
+            }),
             IconButton(icon: const Icon(Icons.architecture), onPressed: () {}),
           ],
         ),
