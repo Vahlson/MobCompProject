@@ -112,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
     geomap.initGeoMap().then((_) => geomap.centerMapOnUser());
 
     //Checks for user taps
-    _mapStream.listen((event) async{
+    _mapStream.listen((event) async {
       if (event.source == MapEventSource.tap) {
         MapEventTap tap = event as MapEventTap;
         //setState(() {
@@ -273,7 +273,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   Provider.of<MapChangeNotifier>(context, listen: false)
                       .dbCom
-                      .joinGroup("-NELacx8HmkaMl1xtjO8");
+                      .leaveGroup("-NELoqOb007SrgLgwM46");
 
                   setState(() {
                     if (selectedOpacity == 1) {

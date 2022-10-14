@@ -595,20 +595,60 @@ class DatabaseCommunicator {
   void joinGroup(String groupID) async {
     String? currentUserID = model.getCurrentUser()?.getUserID();
     if (currentUserID != null) {
-      //TODO only join the group if it actually exists.
-      DatabaseReference ref =
+      //Find out if group exists
+      DatabaseReference potentialGroupRef =
           FirebaseDatabase.instance.ref(groupsPath + "/" + groupID);
-      DatabaseEvent event = await ref.once();
-      final data = event.snapshot.value;
-      if (data != null) {
-        _pushEntryWithExistingKey(
-            usersPath + "/" + currentUserID + "/groups", "",
-            postData: {groupID: true});
+      DatabaseEvent groupExistsEvent = await potentialGroupRef.once();
+      final theGroup = groupExistsEvent.snapshot.value;
+
+      //Only join the group if it actually exists
+      if (theGroup != null) {
+        //Find if we are a part of the group
+        DatabaseReference usersPotentialGroupIDRef = FirebaseDatabase.instance
+            .ref("$usersPath/$currentUserID/groups/$groupID");
+        DatabaseEvent userIsMemberEvent = await usersPotentialGroupIDRef.once();
+        final theUsersGroupID = userIsMemberEvent.snapshot.value;
+
+        //Only join the group if we are not already a part of it.
+        if (theUsersGroupID == null) {
+          Map<String, Object?> updates = {};
+          updates["$groupsPath/$groupID/membercount"] =
+              ServerValue.increment(1);
+          updates["$usersPath/$currentUserID/groups/$groupID"] = {
+            "Joined": true
+          };
+
+          FirebaseDatabase.instance.ref().update(updates);
+
+          /* _pushEntryWithExistingKey(
+            "$usersPath/$currentUserID/groups", "",
+            postData: {groupID: true}); */
+        }
       } else {
         print("Group doesn't exist");
       }
 
       //print(usersPath + "/" + currentUserID + "/groups");
+    }
+  }
+
+  void leaveGroup(String groupID) async {
+    String? uID = model.getCurrentUser()?.getUserID();
+    if (uID != null) {
+      //Find if we are a part of the group
+      DatabaseReference usersPotentialGroupIDRef =
+          FirebaseDatabase.instance.ref("$usersPath/$uID/groups/$groupID");
+      DatabaseEvent userIsMemberEvent = await usersPotentialGroupIDRef.once();
+      final theUsersGroupID = userIsMemberEvent.snapshot.value;
+
+      //Only leave the group if we are already a part of it.
+      if (theUsersGroupID != null) {
+        Map<String, Object?> updates = {};
+        updates["$groupsPath/$groupID/membercount"] = ServerValue.increment(-1);
+        FirebaseDatabase.instance.ref().update(updates);
+
+        _removeData("$usersPath/$uID/groups/$groupID");
+      }
     }
   }
 
