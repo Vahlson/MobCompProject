@@ -5,7 +5,7 @@ import 'package:latlong2/latlong.dart';
 class Model {
   //Tiles of the whole map (at least what is visible)
   List<ColoredTile> _tiles = [];
-  User _user = User("");
+  User? _user;
 
   void setTiles(List<ColoredTile> newTiles) {
     _tiles = newTiles;
@@ -20,29 +20,29 @@ class Model {
     _user = user;
   }
 
-  User getCurrentUser() {
+  User? getCurrentUser() {
     return _user;
   }
 
   Blueprint? getActiveBlueprint() {
-    return _user.getActiveBlueprint();
+    return _user?.getActiveBlueprint();
   }
 
   void setUserBlueprints(List<Blueprint> newBlueprints) {
-    _user.setBlueprints(newBlueprints);
+    _user?.setUserBlueprints(newBlueprints);
   }
 
   void setUserGroups(List<Group> newGroups) {
-    _user.setGroups(newGroups);
+    _user?.setGroups(newGroups);
   }
 
   void setActiveBlueprint(String blueprintID) {
-    _user.setActiveBlueprint(blueprintID);
+    _user?.setActiveBlueprint(blueprintID);
   }
 }
 
 class User {
-  Blueprint? _activeBlueprint;
+  String? _activeBlueprintID;
   List<Blueprint> _availableBlueprints = [];
   List<Group> _groups = [];
   String? _userID;
@@ -64,32 +64,38 @@ class User {
 
   //Returns a copy of the active blueprint.
   Blueprint? getActiveBlueprint() {
-    return _activeBlueprint;
+    Blueprint? activeBlueprint = _availableBlueprints.firstWhere(
+        (b) => b.getBlueprintID() == _activeBlueprintID, orElse: () {
+      return Blueprint("", "");
+    });
+
+    if (activeBlueprint.getBlueprintID() == "") {
+      return null;
+    } else {
+      return activeBlueprint;
+    }
   }
 
   void setActiveBlueprint(String blueprintID) {
     Blueprint? newActiveBlueprint = getAvailableBlueprints().firstWhere(
         (blueprint) => blueprint.getBlueprintID() == blueprintID, orElse: () {
-      if (_activeBlueprint != null) {
-        print('No matching element. Keeping currently active bluprint active');
-        return _activeBlueprint!;
-      } else {
-        print('No matching element called $blueprintID. Doing nothing');
-        return Blueprint("", "");
-      }
+      print('No matching element. Keeping currently active bluprint active');
+      return Blueprint("", "");
     });
-    if (newActiveBlueprint != null && newActiveBlueprint._blueprintID != "") {
+
+    String? newActiveBlueprintID = newActiveBlueprint.getBlueprintID();
+    if (newActiveBlueprintID != null && newActiveBlueprintID != "") {
       print("New active blueprint is: " + newActiveBlueprint._name);
-      _activeBlueprint = newActiveBlueprint;
+      _activeBlueprintID = newActiveBlueprintID;
     }
   }
 
 //Returns a copy of the blueprints list
   List<Blueprint> getAvailableBlueprints() {
-    return _availableBlueprints.toList();
+    return List<Blueprint>.from(_availableBlueprints);
   }
 
-  void setBlueprints(List<Blueprint> newBlueprints) {
+  void setUserBlueprints(List<Blueprint> newBlueprints) {
     _availableBlueprints = newBlueprints;
   }
 
@@ -132,19 +138,20 @@ class Blueprint {
     _blueprintID = bluePrintID;
     _name = data["blueprintName"];
 
-    print("LOLOLOL ${data["tiles"]}");
-
     if (data["tiles"] != null && data["tiles"] != false) {
       Map<String, dynamic> tilesMap =
           Map<String, dynamic>.from(data["tiles"] as Map);
 
-      List<ColoredTile> newTilesList = tilesMap.keys
-          .map((geohash) => ColoredTile.fromMap(geohash, tilesMap[geohash]))
-          .toList();
+      List<ColoredTile> newTilesList = [];
       //Loop through each tile
-      data.forEach((geohash, colorMap) {
-        newTilesList.add(ColoredTile.fromMap(geohash, colorMap));
+      tilesMap.forEach((geohash, data) {
+        if (geohash != null && data != null) {
+          Map<String, dynamic> tile = Map<String, dynamic>.from(data);
+          //The assumption here is that "value" is another map.
+          newTilesList.add(ColoredTile.fromMap(geohash, tile));
+        }
       });
+      print("LOLOLOL ${newTilesList}");
       _blueprintTiles = newTilesList;
     }
   }

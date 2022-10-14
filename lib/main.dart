@@ -104,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
   GeoHasher _geoHasher = GeoHasher();
 
   //TODO Remove?
-  bool isBlueprintEditing = false;
+
 
   initMap() {
     _mapStream = _mapController.mapEventStream;
@@ -120,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
         //Change this to just publishing tile to database
         if (geomap.isValidTilePosition(
             tap.tapPosition.latitude, tap.tapPosition.longitude)) {
-          if (!isBlueprintEditing) {
+          if (!geomap.isBlueprintEditing) {
             Provider.of<MapChangeNotifier>(context, listen: false).addTile(
                 selectedColor,
                 _geoHasher.encode(
@@ -236,7 +236,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("map"),
-        backgroundColor: isBlueprintEditing
+        backgroundColor: geomap.isBlueprintEditing
             ? Color.fromRGBO(0, 0, 255, 1)
             : Color.fromRGBO(255, 0, 0, 1),
       ),
@@ -262,7 +262,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 icon: Icon(Icons.architecture),
                 onPressed: () {
                   setState(() {
-                    isBlueprintEditing = !isBlueprintEditing;
+                    geomap.isBlueprintEditing = !geomap.isBlueprintEditing;
                   });
                 }),
             IconButton(
