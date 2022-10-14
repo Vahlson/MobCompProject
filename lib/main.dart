@@ -112,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
     geomap.initGeoMap().then((_) => geomap.centerMapOnUser());
 
     //Checks for user taps
-    _mapStream.listen((event) {
+    _mapStream.listen((event) async{
       if (event.source == MapEventSource.tap) {
         MapEventTap tap = event as MapEventTap;
         //setState(() {
