@@ -1,3 +1,4 @@
+import 'package:artmap/myGroupPage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -84,53 +85,44 @@ class _CreateGroupState extends State<CreateGroup> {
   TextEditingController dscrpTxtCtrl = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-        child: const Text("Create Group"),
-        onPressed: () {
-          showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (BuildContext context) {
-                return WillPopScope(
-                  onWillPop: () => Future.value(false),
-                  child: AlertDialog(
-                    scrollable: true,
-                    title: const Text('Create a new group'),
-                    content: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Form(
-                        child: Column(
-                          children:[
-                            TextFormField(
-                              controller: grpNameTxtCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Group Name:',
-                                icon: Icon(Icons.groups),
-                              ),
-                            ),
-                            TextFormField(
-                              controller: dscrpTxtCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Message',
-                                icon: Icon(Icons.description),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    actions: [
-                      ElevatedButton(
-                          child: const Text("Submit"),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          })
-                    ],
-                  ),
-                );
-              });
-        },
-      );
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create new group')
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            FadeInImage.assetNetwork(placeholder: 'https://freeiconshop.com/wp-content/uploads/edd/image-outline-filled.png',
+                image: ''),
+            TextFormField(
+              controller: grpNameTxtCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Group Name:',
+                icon: Icon(Icons.groups),
+              ),
+            ),
+            TextFormField(
+              controller: dscrpTxtCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                icon: Icon(Icons.description),
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        //TODO Submit to database
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyGroupPage()),
+        );
+      },
+      backgroundColor: Colors.blue,
+      child: const Icon(Icons.check),
+    ),
+    );
   }
 }
 

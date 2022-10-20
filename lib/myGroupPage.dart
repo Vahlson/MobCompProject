@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'groups.dart';
 
 
+
 class MyGroupPage extends StatefulWidget {
   const MyGroupPage({super.key});
 
@@ -19,14 +20,23 @@ class _MyGroupPageState extends State<MyGroupPage> {
       ),
       body: SingleChildScrollView(
         child: Column(
-            children: const <Widget>[
+            children: const [
               JoinGroup(),
-              CreateGroup(),
+              //CreateGroup(),
               GroupCard(),
               GroupCard(),
-
             ]
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateGroup()),
+          );
+        },
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.add),
       ),
     );
   }
