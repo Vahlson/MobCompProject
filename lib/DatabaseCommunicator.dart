@@ -11,9 +11,9 @@ import 'package:provider/provider.dart';
 
 import 'model/Model.dart';
 
-class BlueprintChangeNotifier extends ChangeNotifier {
+class ActiveBlueprintChangeNotifier extends ChangeNotifier {
   DatabaseCommunicator dbCom;
-  BlueprintChangeNotifier(this.dbCom);
+  ActiveBlueprintChangeNotifier(this.dbCom);
   StreamSubscription<DatabaseEvent>? databaseSubscription;
 
   void _listenToActiveBlueprintChange(String? blueprintID) {
@@ -40,6 +40,10 @@ class BlueprintChangeNotifier extends ChangeNotifier {
       dbCom.changeActiveBlueprint(userID, blueprintID);
       _listenToActiveBlueprintChange(blueprintID);
     }
+  }
+
+  Blueprint? getActiveBlueprint() {
+    return dbCom.model.getCurrentUser()!.getActiveBlueprint();
   }
 
   void unsubscribe() {
@@ -129,8 +133,8 @@ class GroupsChangeNotifier extends ChangeNotifier {
   void _listenToTilesChange() {
     String? userID = dbCom.model.getCurrentUser()?.getUserID();
     if (userID != null) {
-      databaseSubscription =
-          dbCom.listenToUserGroupsChange(userID, uiCallback: notifyListeners);
+      databaseSubscription = dbCom.listenToAvailableGroupsChange(userID,
+          uiCallback: notifyListeners);
     }
   }
 
@@ -154,6 +158,37 @@ class GroupsChangeNotifier extends ChangeNotifier {
   }
 
   //notifyListeners();
+}
+
+class AvailableBlueprintsNotifier extends ChangeNotifier {
+  DatabaseCommunicator dbCom;
+  AvailableBlueprintsNotifier(this.dbCom);
+  StreamSubscription<DatabaseEvent>? databaseSubscription;
+
+  Future<void> initialize() async {
+    await dbCom.initFirebase();
+    _listenToTilesChange();
+  }
+
+  void _listenToTilesChange() {
+    String? userID = dbCom.model.getCurrentUser()?.getUserID();
+    if (userID != null) {
+      databaseSubscription = dbCom.listenToAvailableBlueprintsChange(userID,
+          uiCallback: notifyListeners);
+    }
+  }
+
+  void unsubscribe() {
+    databaseSubscription?.cancel();
+  }
+
+  List<Blueprint> getAvailableBlueprints() {
+    return dbCom.model.getCurrentUser()!.getAvailableBlueprints();
+  }
+
+  Blueprint? getActiveBlueprint() {
+    return dbCom.model.getCurrentUser()!.getActiveBlueprint();
+  }
 }
 
 //https://firebase.google.com/docs/flutter/setup?platform=android
@@ -215,7 +250,7 @@ class DatabaseCommunicator {
         //Do something with the data
         customCallback(key, dataMap, uiCallback);
       } else if (uiCallback != null) {
-        //So the data is now null or false meaning, EMPTY, still update the UI.
+        //If the data is null or false meaning, EMPTY, still update the UI because things could have been removed.
         uiCallback();
       }
     });
@@ -223,7 +258,7 @@ class DatabaseCommunicator {
     return subscription;
   }
 
-  //Generate events when anything in the user database changes, such as the number of blueprints changes
+  //Listens to any changes in the user's database and updates both the groups list and the blueprints list in the model.
   Future<StreamSubscription<DatabaseEvent>> listenToUserChanges(String userID,
       {Function? uiCallback}) async {
     StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
@@ -233,15 +268,38 @@ class DatabaseCommunicator {
     return newSub;
   }
 
-  StreamSubscription<DatabaseEvent> listenToUserGroupsChange(String userID,
+  //Listens to changes to the user's set active blueprint ID and
+  /* StreamSubscription<DatabaseEvent> listenToUserActiveBlueprintChange(String userID,
       {Function? uiCallback}) {
     StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
-        usersPath, _updateUserGroups,
-        key: "$userID/groups", uiCallback: uiCallback);
+        "$usersPath/$userID/activeBlueprintID", _updateUserGroups,
+        uiCallback: uiCallback);
+    //databaseSubscriptions.add(newSub);
+    return newSub;
+  } */
+
+//Listens to changes in the current user's groups list and updates only the groups list in the model.
+  StreamSubscription<DatabaseEvent> listenToAvailableGroupsChange(String userID,
+      {Function? uiCallback}) {
+    StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
+        "$usersPath/$userID/groups", _updateUserGroups,
+        uiCallback: uiCallback);
     //databaseSubscriptions.add(newSub);
     return newSub;
   }
 
+// Listens to changes in the current user's groups list and updates only the blueprints list in the model.
+  StreamSubscription<DatabaseEvent> listenToAvailableBlueprintsChange(
+      String userID,
+      {Function? uiCallback}) {
+    StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
+        "$usersPath/$userID/groups", _updateUserBlueprintsListModel,
+        key: userID, uiCallback: uiCallback);
+    //databaseSubscriptions.add(newSub);
+    return newSub;
+  }
+
+  //Listens to changes in the database with of the provided blueprint ID and updates the model with the tiles from this blueprint
   StreamSubscription<DatabaseEvent> listenToActiveBlueprintChange(
       String blueprintID,
       {Function? uiCallback}) {
@@ -252,6 +310,7 @@ class DatabaseCommunicator {
     return newSub;
   }
 
+  //Listens to changes in the database for the map tiles and updates the model with these tiles.
   StreamSubscription<DatabaseEvent> listenToMapTilesChange(
       {Function? uiCallback}) {
     StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
@@ -299,6 +358,7 @@ class DatabaseCommunicator {
       await _updateUserBlueprintsListModel(
           userID, groups, onModelUpdateCallback);
 
+      //TODO flytta upp i initUserModel
       if (dataMap["activeBlueprintID"] != null &&
           dataMap["activeBlueprintID"] != false) {
         print("TJAAAAAA ${model.getCurrentUser()?.getAvailableBlueprints()}");
@@ -360,11 +420,29 @@ class DatabaseCommunicator {
 
     for (var iD in groupIDs) {
       //print(iD.toString());
+
+      DatabaseReference blueprintRef = ref.child(iD);
+      var snapshot = await blueprintRef.get();
+      if (snapshot.exists) {
+        final data = snapshot.value;
+
+        if (data != null && data != false) {
+          Map<String, dynamic> blueprintData =
+              Map<String, dynamic>.from(data as Map);
+          Blueprint blueprint = Blueprint.fromMap(iD, blueprintData);
+
+          //print("DA FOOKIN BLUEPRINT ${blueprint.getBlueprintID()}");
+          newBlueprintsList.add(blueprint);
+        }
+      }
+
+      /*
       if (model.getActiveBlueprint() != null &&
           iD == model.getActiveBlueprint()?.getBlueprintID()) {
         //If the ID is that of the active blueprint we don't want to remove all its data, just pass it along to new list
         newBlueprintsList.add(model.getActiveBlueprint()!);
       } else {
+      
         DatabaseReference blueprintRef = ref.child(iD);
         DatabaseReference nameRef = blueprintRef.child("blueprintName");
         var snapshot = await nameRef.get();
@@ -381,8 +459,8 @@ class DatabaseCommunicator {
           }
         } else {
           print('No data available.');
-        }
-      }
+        } 
+      }*/
     }
 
     //Set users blueprint list to these blueprints
@@ -393,7 +471,7 @@ class DatabaseCommunicator {
     if (onModelUpdateCallback != null) onModelUpdateCallback();
   }
 
-  Future<void> _updateUserGroups(String? userID, Map<String, dynamic> groups,
+  Future<void> _updateUserGroups(String? _, Map<String, dynamic> groups,
       Function? onModelUpdateCallback) async {
     final ref = FirebaseDatabase.instance.ref().child(groupsPath);
 

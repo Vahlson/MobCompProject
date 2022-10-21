@@ -20,10 +20,13 @@ void main() {
         create: (context) => MapChangeNotifier(dbCom),
       ),
       ChangeNotifierProvider(
-        create: (context) => BlueprintChangeNotifier(dbCom),
+        create: (context) => ActiveBlueprintChangeNotifier(dbCom),
       ),
       ChangeNotifierProvider(
         create: (context) => GroupsChangeNotifier(dbCom),
+      ),
+      ChangeNotifierProvider(
+        create: (context) => AvailableBlueprintsNotifier(dbCom),
       ),
     ],
     child: const MyApp(),
@@ -122,7 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     precision: 8),
                 penMode);
           } else {
-            Provider.of<BlueprintChangeNotifier>(context, listen: false)
+            Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
                 .addTileToActiveBlueprint(
                     selectedColor,
                     _geoHasher.encode(
@@ -156,16 +159,22 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     Provider.of<MapChangeNotifier>(context, listen: false).unsubscribe();
-    Provider.of<BlueprintChangeNotifier>(context, listen: false).unsubscribe();
+    Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+        .unsubscribe();
+    Provider.of<GroupsChangeNotifier>(context, listen: false).unsubscribe();
+    Provider.of<AvailableBlueprintsNotifier>(context, listen: false)
+        .unsubscribe();
 
     super.dispose();
   }
 
   void initDatabase() async {
     await Provider.of<MapChangeNotifier>(context, listen: false).initialize();
-    await Provider.of<BlueprintChangeNotifier>(context, listen: false)
+    await Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
         .initialize();
     await Provider.of<GroupsChangeNotifier>(context, listen: false)
+        .initialize();
+    await Provider.of<AvailableBlueprintsNotifier>(context, listen: false)
         .initialize();
   }
 
@@ -200,7 +209,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ],
                 ),
                 const SizedBox(
-                  height: 16,
+                  height: 48,
                 ),
                 GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
@@ -281,7 +290,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(
-                      height: 8,
+                      height: 16,
                     ),
                     //const Text("Navigate to"),
                     TextButton.icon(
@@ -321,7 +330,7 @@ class _MyHomePageState extends State<MyHomePage> {
         });
   }
 
-  void _showBlueprintMenu(context) {
+  void _showBlueprintMenu(parentContext) {
     showModalBottomSheet(
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
@@ -329,85 +338,79 @@ class _MyHomePageState extends State<MyHomePage> {
             topRight: Radius.circular(20.0),
           ),
         ),
-        context: context,
+        context: parentContext,
         builder: (BuildContext context) {
-          return StatefulBuilder(
-            builder:
-                (BuildContext context, StateSetter setActiveBlueprintState) {
-              return Wrap(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.only(
-                        top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: const [
-                            Icon(
-                              Icons.architecture,
-                            ),
-                            SizedBox(
-                              width: 8,
-                            ),
-                            Text(
-                              "Active blueprint",
-                              style: TextStyle(fontSize: 22),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 8,
-                        ),
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                          child: DropdownButton(
-                              items: Provider.of<BlueprintChangeNotifier>(
-                                      context,
-                                      listen: false)
-                                  .dbCom
-                                  .model
-                                  .getCurrentUser()!
-                                  .getAvailableBlueprints()
-                                  .map((Blueprint bp) {
-                                return DropdownMenuItem(
-                                    value: bp.getBlueprintID(),
-                                    child: Container(
-                                        margin: const EdgeInsets.symmetric(
-                                            horizontal: 8),
-                                        child: Text(bp.getName())));
-                              }).toList(),
-                              value: Provider.of<BlueprintChangeNotifier>(
-                                      context,
-                                      listen: false)
-                                  .dbCom
-                                  .model
-                                  .getCurrentUser()!
-                                  .getActiveBlueprint()!
-                                  .getBlueprintID(),
-                              isExpanded: true,
+          return Consumer2<AvailableBlueprintsNotifier,
+              ActiveBlueprintChangeNotifier>(
+            builder: (context, availableBlueprintsNotifier,
+                activeBlueprintChangeNotifier, child) {
+              print("REBUILDING");
+              return StatefulBuilder(builder:
+                  (BuildContext context, StateSetter setActiveBlueprintState) {
+                return Wrap(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.only(
+                          top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(
+                                Icons.architecture,
+                              ),
+                              SizedBox(
+                                width: 8,
+                              ),
+                              Text(
+                                "Active blueprint",
+                                style: TextStyle(fontSize: 22),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 16,
+                          ),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            child: DropdownButton(
+                                items: availableBlueprintsNotifier
+                                    .getAvailableBlueprints()
+                                    .map((Blueprint bp) {
+                                  return DropdownMenuItem(
+                                      value: bp.getBlueprintID(),
+                                      child: Container(
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 8),
+                                          child: Text(bp.getName())));
+                                }).toList(),
+                                value: activeBlueprintChangeNotifier
+                                        .getActiveBlueprint()
+                                        ?.getBlueprintID() ??
+                                    "",
+                                isExpanded: true,
+                                onChanged: (value) {
+                                  activeBlueprintChangeNotifier
+                                      .changeActiveBlueprint(value!);
+                                }),
+                          ),
+                          CheckboxListTile(
+                              title: const Text("Show blueprint"),
+                              value: showBlueprint,
                               onChanged: (value) {
-                                Provider.of<BlueprintChangeNotifier>(context,
-                                        listen: false)
-                                    .dbCom
-                                    .model
-                                    .setActiveBlueprint(value!);
+                                setActiveBlueprintState(() {
+                                  showBlueprint = value!;
+                                  geomap.showBlueprint = showBlueprint;
+                                  print("THECONTEXT: $parentContext");
+                                });
                               }),
-                        ),
-                        CheckboxListTile(
-                            title: const Text("Show blueprint"),
-                            value: showBlueprint,
-                            onChanged: (value) {
-                              setActiveBlueprintState(() {
-                                showBlueprint = value!;
-                                geomap.showBlueprint = showBlueprint;
-                              });
-                            }),
-                      ],
-                    ),
-                  )
-                ],
-              );
+                        ],
+                      ),
+                    )
+                  ],
+                );
+              });
             },
           );
         });
@@ -447,8 +450,9 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Container(
           height: 800,
-          child: Consumer2<MapChangeNotifier, BlueprintChangeNotifier>(builder:
-              (context, mapChangeNotifier, blueprintChangeNotifier, widget) {
+          child: Consumer2<MapChangeNotifier, ActiveBlueprintChangeNotifier>(
+              builder: (context, mapChangeNotifier, blueprintChangeNotifier,
+                  widget) {
             //This consumes the notifying of two different notifiers. Splitting them up like this allows for more flexibility in what to rebuild, when.
             print("REBUILDING");
             return geomap.showMap(mapChangeNotifier.dbCom.model);
