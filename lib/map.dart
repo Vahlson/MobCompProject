@@ -14,8 +14,6 @@ class GeoMap {
 
   final GeoHasher _geoHasher = GeoHasher();
 
-  bool isBlueprintEditing = false;
-
   bool showBlueprint = false;
 
   //Should be downloaded from database

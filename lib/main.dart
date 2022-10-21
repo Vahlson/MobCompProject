@@ -257,15 +257,19 @@ class _MyHomePageState extends State<MyHomePage> {
                   //const Text("Navigate to"),
                   TextButton.icon(
                       onPressed: (){
+                        setState(() {
+                          Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setIsBluePrintEditing(false);
+                        });
                         Navigator.pop(context);
                       },
-                      /*style: TextButton.styleFrom(
-                        foregroundColor: Colors.black,
-                      ),*/
+                      style: TextButton.styleFrom(
+                        foregroundColor: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Colors.black54 : Colors.black,
+                      ),
                       icon: const Icon(Icons.map),
                       label: Row(children: const [Text("Map")])),
                   TextButton.icon(
                       onPressed: (){
+                        Navigator.pop(context);
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (context) => const MyGroupPage(),
@@ -273,14 +277,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         );
                       },
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.black,
+                        foregroundColor: Colors.black54,
                       ),
                       icon: const Icon(Icons.group),
                       label: Row(children: const [Text("Groups")])),
                   TextButton.icon(
-                      onPressed: (){},
+                      onPressed: (){
+                        setState(() {
+                          Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setIsBluePrintEditing(true);
+                        });
+                        Navigator.pop(context);
+                      },
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.black,
+                        foregroundColor: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Colors.black : Colors.black54,
                       ),
                       icon: const Icon(Icons.architecture),
                       label: Row(children: const [Text("Edit blueprints")])),
@@ -313,22 +322,23 @@ class _MyHomePageState extends State<MyHomePage> {
                         children: const [
                           Icon(Icons.architecture,),
                           SizedBox(width: 8,),
-                          Text("Active blueprint", style: TextStyle(fontSize: 22),),
+                          Text("Blueprint", style: TextStyle(fontSize: 22),),
                         ],
                       ),
                       const SizedBox(height: 8,),
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        child: DropdownButton(
-                            items: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getAvailableBlueprints().map((Blueprint bp) {
-                              return DropdownMenuItem(value: bp.getBlueprintID(), child: Container(margin: const EdgeInsets.symmetric(horizontal: 8), child: Text(bp.getName())));
-                            }).toList(),
-                            value: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getActiveBlueprint()!.getBlueprintID(),
-                            isExpanded: true,
-                            onChanged: (value) {
-                              Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setActiveBlueprint(value!);
-                            }
-                        ),
+                      DropdownButtonFormField(
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Active blueprint',
+                          ),
+                          items: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getAvailableBlueprints().map((Blueprint bp) {
+                            return DropdownMenuItem(value: bp.getBlueprintID(), child: Container(margin: const EdgeInsets.symmetric(horizontal: 8), child: Text(bp.getName())));
+                          }).toList(),
+                          value: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getActiveBlueprint()!.getBlueprintID(),
+                          isExpanded: true,
+                          onChanged: (value) {
+                            Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setActiveBlueprint(value!);
+                          }
                       ),
                       CheckboxListTile(
                           title: const Text("Show blueprint"),
@@ -352,8 +362,28 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Map"),
+        title: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Container(
+          margin: const EdgeInsets.all(16.0),
+          child: DropdownButtonFormField(
+              decoration: const InputDecoration(
+                labelText: 'Edit blueprint',
+              ),
+              items: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getAvailableBlueprints().map((Blueprint bp) {
+                return DropdownMenuItem(value: bp.getBlueprintID(), child: Container(margin: const EdgeInsets.symmetric(horizontal: 8), child: Text(bp.getName())));
+              }).toList(),
+              value: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getActiveBlueprint()!.getBlueprintID(),
+              isExpanded: true,
+              onChanged: (value) {
+                Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setActiveBlueprint(value!);
+              }
+          ),
+        ) : const Text("Map"),
         actions: [
+          IconButton(
+              icon: const Icon(Icons.my_location),
+              onPressed: () {
+                geomap.centerMapOnUser();
+              }),
           IconButton(
             //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
               icon: Icon((geomap.selectedOpacity == 1) ? CustomIcons.humidity_high : ((geomap.selectedOpacity == 0.5) ? CustomIcons.humidity_mid : CustomIcons.humidity_low),),
@@ -370,8 +400,8 @@ class _MyHomePageState extends State<MyHomePage> {
               }),
         ],
         backgroundColor: geomap.isBlueprintEditing
-            ? Color.fromRGBO(0, 0, 255, 1)
-            : Color.fromRGBO(255, 0, 0, 1),
+            ? Colors.lightBlue
+            : Colors.black,
       ),
       body: Center(
         child: Container(
