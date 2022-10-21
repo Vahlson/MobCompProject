@@ -63,7 +63,6 @@ class _MyHomePageState extends State<MyHomePage> {
   late GeoMap geomap;
   Color selectedColor = Colors.black;
   bool penMode = true;
-  //bool showBlueprint = false;
 
   final List<Color> colourPaletteHex = [
     Color(0xff8F4D7F),
@@ -117,7 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
         //Change this to just publishing tile to database
         if (geomap.isValidTilePosition(
             tap.tapPosition.latitude, tap.tapPosition.longitude)) {
-          if (!geomap.isBlueprintEditing) {
+          if (!Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing()) {
             Provider.of<MapChangeNotifier>(context, listen: false).addTile(
                 selectedColor,
                 _geoHasher.encode(
@@ -265,67 +264,62 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (BuildContext context) {
           return Wrap(
-            children: [
-              Container(
-                padding: const EdgeInsets.only(
-                    top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          "assets/icon.png",
-                          height: 22,
-                          width: 22,
-                        ),
-                        const SizedBox(
-                          width: 8,
-                        ),
-                        const Text(
-                          "blot",
-                          style: TextStyle(fontSize: 22),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    //const Text("Navigate to"),
-                    TextButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        /*style: TextButton.styleFrom(
-                        foregroundColor: Colors.black,
-                      ),*/
-                        icon: const Icon(Icons.map),
-                        label: Row(children: const [Text("Map")])),
-                    TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => const MyGroupPage(),
-                            ),
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.black,
-                        ),
-                        icon: const Icon(Icons.group),
-                        label: Row(children: const [Text("Groups")])),
-                    TextButton.icon(
-                        onPressed: () {},
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.black,
-                        ),
-                        icon: const Icon(Icons.architecture),
-                        label: Row(children: const [Text("Edit blueprints")])),
-                  ],
-                ),
-              )
-            ],
+            children: [Container(
+              padding: const EdgeInsets.only(top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Image.asset("assets/icon.png", height: 22, width: 22,),
+                      const SizedBox(width: 8,),
+                      const Text("blot", style: TextStyle(fontSize: 22),),
+                    ],
+                  ),
+                  const SizedBox(height: 16,),
+                  //const Text("Navigate to"),
+                  TextButton.icon(
+                      onPressed: (){
+                        setState(() {
+                          Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).setIsBluePrintEditing(false);
+                        });
+                        Navigator.pop(context);
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing() ? Colors.black54 : Colors.black,
+                      ),
+                      icon: const Icon(Icons.map),
+                      label: Row(children: const [Text("Map")])),
+                  TextButton.icon(
+                      onPressed: (){
+                        Navigator.pop(context);
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => const MyGroupPage(),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.black54,
+                      ),
+                      icon: const Icon(Icons.group),
+                      label: Row(children: const [Text("Groups")])),
+                  TextButton.icon(
+                      onPressed: (){
+                        setState(() {
+                          Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).setIsBluePrintEditing(true);
+                        });
+                        Navigator.pop(context);
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing() ? Colors.black : Colors.black54,
+                      ),
+                      icon: const Icon(Icons.architecture),
+                      label: Row(children: const [Text("Edit blueprints")])),
+                ],
+              ),
+            )],
           );
         });
   }
@@ -374,7 +368,11 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           Container(
                             margin: const EdgeInsets.symmetric(horizontal: 8),
-                            child: DropdownButton(
+                            child: DropdownButtonFormField(
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'Active blueprint',
+                                ),
                                 items: availableBlueprintsNotifier
                                     .getAvailableBlueprints()
                                     .map((Blueprint bp) {
@@ -407,32 +405,45 @@ class _MyHomePageState extends State<MyHomePage> {
                                       .setShowBlueprint(value!);
                                 });
                               }),
-                        ],
-                      ),
-                    )
-                  ],
-                );
-              });
+                    ],
+                  ),
+                )],
+              );
             },
           );
         });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Map"),
+        title: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Container(
+          margin: const EdgeInsets.all(16.0),
+          child: DropdownButtonFormField(
+              decoration: const InputDecoration(
+                labelText: 'Edit blueprint',
+              ),
+              items: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getAvailableBlueprints().map((Blueprint bp) {
+                return DropdownMenuItem(value: bp.getBlueprintID(), child: Container(margin: const EdgeInsets.symmetric(horizontal: 8), child: Text(bp.getName())));
+              }).toList(),
+              value: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getActiveBlueprint()!.getBlueprintID(),
+              isExpanded: true,
+              onChanged: (value) {
+                Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.setActiveBlueprint(value!);
+              }
+          ),
+        ) : const Text("Map"),
         actions: [
           IconButton(
-              //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
-              icon: Icon(
-                (geomap.selectedOpacity == 1)
-                    ? CustomIcons.humidity_high
-                    : ((geomap.selectedOpacity == 0.5)
-                        ? CustomIcons.humidity_mid
-                        : CustomIcons.humidity_low),
-              ),
+              icon: const Icon(Icons.my_location),
+              onPressed: () {
+                geomap.centerMapOnUser();
+              }),
+          IconButton(
+            //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
+              icon: Icon((geomap.selectedOpacity == 1) ? CustomIcons.humidity_high : ((geomap.selectedOpacity == 0.5) ? CustomIcons.humidity_mid : CustomIcons.humidity_low),),
               onPressed: () {
                 setState(() {
                   if (geomap.selectedOpacity == 1) {
@@ -445,9 +456,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               }),
         ],
-        backgroundColor: geomap.isBlueprintEditing
-            ? Color.fromRGBO(0, 0, 255, 1)
-            : Color.fromRGBO(255, 0, 0, 1),
+        backgroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing()
+            ? Colors.lightBlue
+            : Colors.black,
       ),
       body: Center(
         child: Container(
