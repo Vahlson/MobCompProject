@@ -182,7 +182,7 @@ class GroupCard extends StatelessWidget {
                 style: TextStyle(fontSize: 22),
               ),
               subtitle: Text(
-                'Members: ${group.memberCount}',
+                '${group.memberCount} members',
                 style: TextStyle(
                   color: Colors.black.withOpacity(0.4),
                 ),
