@@ -16,6 +16,8 @@ class GeoMap {
 
   bool isBlueprintEditing = false;
 
+  bool showBlueprint = false;
+
   //Should be downloaded from database
 
   List<Polyline> _gridX = [];
@@ -250,7 +252,7 @@ class GeoMap {
 
     //TODO change _createPolygon to something else
     List<Polygon> _blueprintPolygons = [];
-    if (isBlueprintEditing) {
+    if (isBlueprintEditing || showBlueprint) {
       List<ColoredTile>? tempBlueprintTiles =
           model.getActiveBlueprint()?.getTiles();
 
@@ -259,7 +261,7 @@ class GeoMap {
       if (tempBlueprintTiles != null) {
         _blueprintPolygons = tempBlueprintTiles
             .map((tile) => _createPolygon(
-                ColoredTile(_getGeoCenter(tile.position), tile.color), 0.5))
+                ColoredTile(_getGeoCenter(tile.position), tile.color), showBlueprint ? 0.5 : 1))
             .toList();
       }
     }
