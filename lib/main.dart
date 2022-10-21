@@ -77,18 +77,18 @@ class _MyHomePageState extends State<MyHomePage> {
     Color(0xff112871),
     Color(0xff106D74),
     Color(0xff402E58),
-    Color(0xff828282),
     Color(0xff000000),
+    Color(0xffCDCDCD),
     Color(0xff1D43BC),
     Color(0xff1AB5C1),
     Color(0xff6A4C93),
-    Color(0xffCDCDCD),
-    Color(0xffFFFFFF),
+    Color(0xff494949),
+    Color(0xffF0F0F0),
     Color(0xffA5B4E4),
     Color(0xffA3E1E6),
     Color(0xffC3B7D4),
-    Color(0xffF0F0F0),
-    Color(0xffF0F0F0).withOpacity(0),
+    Color(0xff828282),
+    Color(0xffFFFFFF),
   ];
 
   //Move this
