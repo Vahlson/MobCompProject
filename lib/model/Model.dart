@@ -18,6 +18,14 @@ class Model {
     _showBlueprint = value;
   }
 
+  bool getIsBluePrintEditing() {
+    return _isBlueprintEditing;
+  }
+
+  void setIsBluePrintEditing(bool value) {
+    _isBlueprintEditing = value;
+  }
+
   void setTiles(List<ColoredTile> newTiles) {
     _tiles = newTiles;
   }
@@ -39,10 +47,6 @@ class Model {
     return _user?.getActiveBlueprint();
   }
 
-  bool getIsBluePrintEditing() {
-    return _isBlueprintEditing;
-  }
-
   void setUserBlueprints(List<Blueprint> newBlueprints) {
     _user?.setUserBlueprints(newBlueprints);
   }
@@ -54,11 +58,6 @@ class Model {
   void setActiveBlueprint(String blueprintID) {
     _user?.setActiveBlueprint(blueprintID);
   }
-
-  void setIsBluePrintEditing(bool value) {
-    _isBlueprintEditing = value;
-  }
-
 }
 
 class User {

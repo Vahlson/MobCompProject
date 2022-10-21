@@ -114,26 +114,27 @@ class _MyHomePageState extends State<MyHomePage> {
         MapEventTap tap = event as MapEventTap;
         //setState(() {
         //Change this to just publishing tile to database
-        if (geomap.isValidTilePosition(
-            tap.tapPosition.latitude, tap.tapPosition.longitude)) {
-          if (!Provider.of<ActiveBlueprintChangeNotifier>(context,
-                  listen: false)
-              .getIsBluePrintEditing()) {
+
+        if (!Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+            .getIsBluePrintEditing()) {
+          if (geomap.isValidTilePosition(
+              tap.tapPosition.latitude, tap.tapPosition.longitude)) {
             Provider.of<MapChangeNotifier>(context, listen: false).addTile(
                 selectedColor,
                 _geoHasher.encode(
                     tap.tapPosition.longitude, tap.tapPosition.latitude,
                     precision: 8),
                 penMode);
-          } else {
-            Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
-                .addTileToActiveBlueprint(
-                    selectedColor,
-                    _geoHasher.encode(
-                        tap.tapPosition.longitude, tap.tapPosition.latitude,
-                        precision: 8));
           }
+        } else {
+          Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+              .addTileToActiveBlueprint(
+                  selectedColor,
+                  _geoHasher.encode(
+                      tap.tapPosition.longitude, tap.tapPosition.latitude,
+                      precision: 8));
         }
+
         //});
       } else {
         setState(() {
@@ -300,6 +301,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             Provider.of<ActiveBlueprintChangeNotifier>(context,
                                     listen: false)
                                 .setIsBluePrintEditing(false);
+                            Provider.of<ActiveBlueprintChangeNotifier>(context,
+                                    listen: false)
+                                .setShowBlueprint(true);
                           });
                           Navigator.pop(context);
                         },
@@ -334,6 +338,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             Provider.of<ActiveBlueprintChangeNotifier>(context,
                                     listen: false)
                                 .setIsBluePrintEditing(true);
+                            Provider.of<ActiveBlueprintChangeNotifier>(context,
+                                    listen: false)
+                                .setShowBlueprint(true);
                           });
                           Navigator.pop(context);
                         },
@@ -558,6 +565,14 @@ class _MyHomePageState extends State<MyHomePage> {
                   _showNavMenu(context);
                 }),
             const Spacer(),
+            !Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+                    .getIsBluePrintEditing()
+                ? IconButton(
+                    icon: const Icon(Icons.architecture),
+                    onPressed: () {
+                      _showBlueprintMenu(context);
+                    })
+                : SizedBox(),
             IconButton(
                 icon: Center(
                   child: Stack(
@@ -581,11 +596,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   setState(() {
                     penMode = !penMode;
                   });
-                }),
-            IconButton(
-                icon: const Icon(Icons.architecture),
-                onPressed: () {
-                  _showBlueprintMenu(context);
                 }),
           ],
         ),
