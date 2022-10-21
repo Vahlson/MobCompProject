@@ -14,27 +14,6 @@ class MyGroupPage extends StatefulWidget {
 class _MyGroupPageState extends State<MyGroupPage> {
   @override
   Widget build(BuildContext context) {
-/* 
-    SingleChildScrollView(
-        child: Consumer<GroupsChangeNotifier>(
-          builder: (context, groupsChangeNotifier, child) {
-            List<Group>? availableGroups = groupsChangeNotifier.dbCom.model
-                .getCurrentUser()
-                ?.getAvailableGroups();
-            List<Widget> groupsList = [];
-
-            //Get all
-            if (availableGroups != null) {
-              groupsList =
-                  availableGroups.map((group) => GroupCard(group)).toList();
-            }
-
-            groupsList.insert(0,JoinGroup());
-
-            return Column(children: const [groupsList]);
-          },
-        ),
-      ), */
 
     return Consumer<GroupsChangeNotifier>(
       builder: (context, groupsChangeNotifier, child) {
@@ -43,15 +22,6 @@ class _MyGroupPageState extends State<MyGroupPage> {
             ?.getAvailableGroups();
 
         availableGroups ??= [];
-        /* List<Widget> groupsList = [];
-
-            //Get all
-            if (availableGroups != null) {
-              groupsList =
-                  availableGroups.map((group) => GroupCard(group)).toList();
-            }
-
-            groupsList.insert(0,JoinGroup()); */
 
         return Scaffold(
           appBar: AppBar(
@@ -59,9 +29,6 @@ class _MyGroupPageState extends State<MyGroupPage> {
           ),
           body: ListView.builder(
             itemCount: availableGroups.length + 1,
-            /* prototypeItem: ListTile(
-              title: Text(availableGroups?.first.name ?? "Is null"),
-            ), */
             itemBuilder: (context, index) {
               if (index == 0) {
                 // return Football-Card

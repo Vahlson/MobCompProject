@@ -117,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
         //Change this to just publishing tile to database
         if (geomap.isValidTilePosition(
             tap.tapPosition.latitude, tap.tapPosition.longitude)) {
-          if (!geomap.isBlueprintEditing) {
+          if (!Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing()) {
             Provider.of<MapChangeNotifier>(context, listen: false).addTile(
                 selectedColor,
                 _geoHasher.encode(
@@ -283,12 +283,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   TextButton.icon(
                       onPressed: (){
                         setState(() {
-                          Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setIsBluePrintEditing(false);
+                          Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).setIsBluePrintEditing(false);
                         });
                         Navigator.pop(context);
                       },
                       style: TextButton.styleFrom(
-                        foregroundColor: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Colors.black54 : Colors.black,
+                        foregroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing() ? Colors.black54 : Colors.black,
                       ),
                       icon: const Icon(Icons.map),
                       label: Row(children: const [Text("Map")])),
@@ -309,12 +309,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   TextButton.icon(
                       onPressed: (){
                         setState(() {
-                          Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setIsBluePrintEditing(true);
+                          Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).setIsBluePrintEditing(true);
                         });
                         Navigator.pop(context);
                       },
                       style: TextButton.styleFrom(
-                        foregroundColor: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Colors.black : Colors.black54,
+                        foregroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing() ? Colors.black : Colors.black54,
                       ),
                       icon: const Icon(Icons.architecture),
                       label: Row(children: const [Text("Edit blueprints")])),

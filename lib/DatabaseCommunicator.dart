@@ -78,6 +78,16 @@ class ActiveBlueprintChangeNotifier extends ChangeNotifier {
 
     //notifyListeners();
   }
+
+  bool getIsBluePrintEditing() {
+    return dbCom.model.getIsBluePrintEditing();
+  }
+
+  void setIsBluePrintEditing(bool value) {
+    dbCom.model.setIsBluePrintEditing(value);
+    notifyListeners();
+  }
+
 }
 
 //Notifies the consumer of changes to the map database as well
