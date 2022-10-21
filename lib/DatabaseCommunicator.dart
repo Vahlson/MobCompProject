@@ -114,7 +114,6 @@ class MapChangeNotifier extends ChangeNotifier {
   }
 
     //notifyListeners();
-  }
 }
 
 //https://firebase.google.com/docs/flutter/setup?platform=android

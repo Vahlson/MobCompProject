@@ -245,7 +245,7 @@ class GeoMap {
     List<Polygon> _polygons = model
         .getTiles()
         .map((tile) => _createPolygon(
-            ColoredTile(_getGeoCenter(tile.position), tile.color.withOpacity(selectedOpacity))))
+            ColoredTile(_getGeoCenter(tile.position), tile.color.withOpacity(selectedOpacity)), 1))
         .toList();
 
     //TODO change _createPolygon to something else

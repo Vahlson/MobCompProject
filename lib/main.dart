@@ -115,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 selectedColor,
                 _geoHasher.encode(
                     tap.tapPosition.longitude, tap.tapPosition.latitude,
-                    precision: 8));
+                    precision: 8), penMode);
           } else {
             Provider.of<BlueprintChangeNotifier>(context, listen: false)
                 .addTileToActiveBlueprint(
@@ -290,7 +290,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               }),
         ],
-      ),
         backgroundColor: geomap.isBlueprintEditing
             ? Color.fromRGBO(0, 0, 255, 1)
             : Color.fromRGBO(255, 0, 0, 1),
