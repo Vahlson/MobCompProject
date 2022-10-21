@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Map test',
+      title: 'blot',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -60,6 +60,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late GeoMap geomap;
   Color selectedColor = Colors.black;
   bool penMode = true;
+  bool showBlueprint = false;
 
   final List<Color> colourPaletteHex = [
     Color(0xff8F4D7F),
@@ -80,18 +81,18 @@ class _MyHomePageState extends State<MyHomePage> {
     Color(0xff112871),
     Color(0xff106D74),
     Color(0xff402E58),
-    Color(0xff828282),
     Color(0xff000000),
+    Color(0xffCDCDCD),
     Color(0xff1D43BC),
     Color(0xff1AB5C1),
     Color(0xff6A4C93),
-    Color(0xffCDCDCD),
-    Color(0xffFFFFFF),
+    Color(0xff494949),
+    Color(0xffF0F0F0),
     Color(0xffA5B4E4),
     Color(0xffA3E1E6),
     Color(0xffC3B7D4),
-    Color(0xffF0F0F0),
-    Color(0xffF0F0F0).withOpacity(0),
+    Color(0xff828282),
+    Color(0xffFFFFFF),
   ];
 
   //Move this
@@ -180,18 +181,40 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (BuildContext bc) {
           return Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              //gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 48),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5),
-              itemCount: colourPaletteHex.length,
-              itemBuilder: (context, index) {
-                return colorButton(colourPaletteHex[index]);
-                //DialKey(colour: colourPaletteHex[index]);
-              },
+            padding: const EdgeInsets.only(
+                top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
+            child: Wrap(
+              children: [
+                Row(
+                  children: const [
+                    Icon(
+                      Icons.palette_rounded,
+                    ),
+                    SizedBox(
+                      width: 8,
+                    ),
+                    Text(
+                      "Palette",
+                      style: TextStyle(fontSize: 22),
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  //gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 48),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5),
+                  itemCount: colourPaletteHex.length,
+                  itemBuilder: (context, index) {
+                    return colorButton(colourPaletteHex[index]);
+                    //DialKey(colour: colourPaletteHex[index]);
+                  },
+                ),
+              ],
             ),
           );
         });
@@ -231,14 +254,35 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
         context: context,
-        builder: (BuildContext bc) {
+        builder: (BuildContext context) {
           return Wrap(
             children: [
               Container(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(
+                    top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          "assets/icon.png",
+                          height: 22,
+                          width: 22,
+                        ),
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        const Text(
+                          "blot",
+                          style: TextStyle(fontSize: 22),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 8,
+                    ),
                     //const Text("Navigate to"),
                     TextButton.icon(
                         onPressed: () {
@@ -268,7 +312,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           foregroundColor: Colors.black,
                         ),
                         icon: const Icon(Icons.architecture),
-                        label: Row(children: const [Text("Edit Blueprints")])),
+                        label: Row(children: const [Text("Edit blueprints")])),
                   ],
                 ),
               )
@@ -277,11 +321,103 @@ class _MyHomePageState extends State<MyHomePage> {
         });
   }
 
+  void _showBlueprintMenu(context) {
+    showModalBottomSheet(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20.0),
+            topRight: Radius.circular(20.0),
+          ),
+        ),
+        context: context,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder:
+                (BuildContext context, StateSetter setActiveBlueprintState) {
+              return Wrap(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.only(
+                        top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(
+                              Icons.architecture,
+                            ),
+                            SizedBox(
+                              width: 8,
+                            ),
+                            Text(
+                              "Active blueprint",
+                              style: TextStyle(fontSize: 22),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          child: DropdownButton(
+                              items: Provider.of<BlueprintChangeNotifier>(
+                                      context,
+                                      listen: false)
+                                  .dbCom
+                                  .model
+                                  .getCurrentUser()!
+                                  .getAvailableBlueprints()
+                                  .map((Blueprint bp) {
+                                return DropdownMenuItem(
+                                    value: bp.getBlueprintID(),
+                                    child: Container(
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 8),
+                                        child: Text(bp.getName())));
+                              }).toList(),
+                              value: Provider.of<BlueprintChangeNotifier>(
+                                      context,
+                                      listen: false)
+                                  .dbCom
+                                  .model
+                                  .getCurrentUser()!
+                                  .getActiveBlueprint()!
+                                  .getBlueprintID(),
+                              isExpanded: true,
+                              onChanged: (value) {
+                                Provider.of<BlueprintChangeNotifier>(context,
+                                        listen: false)
+                                    .dbCom
+                                    .model
+                                    .setActiveBlueprint(value!);
+                              }),
+                        ),
+                        CheckboxListTile(
+                            title: const Text("Show blueprint"),
+                            value: showBlueprint,
+                            onChanged: (value) {
+                              setActiveBlueprintState(() {
+                                showBlueprint = value!;
+                                geomap.showBlueprint = showBlueprint;
+                              });
+                            }),
+                      ],
+                    ),
+                  )
+                ],
+              );
+            },
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("map"),
+        title: const Text("Map"),
         actions: [
           IconButton(
               //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
@@ -356,15 +492,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 onPressed: () {
-                  Provider.of<MapChangeNotifier>(context, listen: false)
-                      .dbCom
-                      .leaveGroup("-NELoqOb007SrgLgwM46");
-
                   setState(() {
                     penMode = !penMode;
                   });
                 }),
-            IconButton(icon: const Icon(Icons.architecture), onPressed: () {}),
+            IconButton(
+                icon: const Icon(Icons.architecture),
+                onPressed: () {
+                  _showBlueprintMenu(context);
+                }),
           ],
         ),
       ),
