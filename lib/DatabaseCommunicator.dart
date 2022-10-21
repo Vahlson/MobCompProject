@@ -22,7 +22,7 @@ class ActiveBlueprintChangeNotifier extends ChangeNotifier {
       databaseSubscription = dbCom.listenToActiveBlueprintChange(blueprintID,
           uiCallback: notifyListeners);
     } else {
-      print("LALALALALALALALA");
+      //print("LALALALALALALALA");
     }
   }
 
@@ -40,6 +40,15 @@ class ActiveBlueprintChangeNotifier extends ChangeNotifier {
       dbCom.changeActiveBlueprint(userID, blueprintID);
       _listenToActiveBlueprintChange(blueprintID);
     }
+  }
+
+  bool shouldShowBlueprint() {
+    return dbCom.model.shouldShowBlueprint();
+  }
+
+  void setShowBlueprint(bool value) {
+    dbCom.model.setShowBlueprint(value);
+    notifyListeners();
   }
 
   Blueprint? getActiveBlueprint() {

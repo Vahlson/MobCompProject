@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late GeoMap geomap;
   Color selectedColor = Colors.black;
   bool penMode = true;
-  bool showBlueprint = false;
+  //bool showBlueprint = false;
 
   final List<Color> colourPaletteHex = [
     Color(0xff8F4D7F),
@@ -378,6 +378,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                 items: availableBlueprintsNotifier
                                     .getAvailableBlueprints()
                                     .map((Blueprint bp) {
+                                  print("A blueprint yo: ${bp.getName()}");
+
                                   return DropdownMenuItem(
                                       value: bp.getBlueprintID(),
                                       child: Container(
@@ -397,12 +399,12 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           CheckboxListTile(
                               title: const Text("Show blueprint"),
-                              value: showBlueprint,
+                              value: activeBlueprintChangeNotifier
+                                  .shouldShowBlueprint(),
                               onChanged: (value) {
                                 setActiveBlueprintState(() {
-                                  showBlueprint = value!;
-                                  geomap.showBlueprint = showBlueprint;
-                                  print("THECONTEXT: $parentContext");
+                                  activeBlueprintChangeNotifier
+                                      .setShowBlueprint(value!);
                                 });
                               }),
                         ],
