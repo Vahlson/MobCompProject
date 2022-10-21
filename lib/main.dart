@@ -399,7 +399,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 width: 8,
                               ),
                               Text(
-                                "Active blueprint",
+                                "Blueprint",
                                 style: TextStyle(fontSize: 22),
                               ),
                             ],
