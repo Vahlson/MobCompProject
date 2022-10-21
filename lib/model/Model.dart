@@ -165,7 +165,7 @@ class Blueprint {
           newTilesList.add(ColoredTile.fromMap(geohash, tile));
         }
       });
-      print("LOLOLOL ${newTilesList}");
+      //print("LOLOLOL ${newTilesList}");
       _blueprintTiles = newTilesList;
     }
   }

@@ -392,8 +392,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                         ?.getBlueprintID() ??
                                     "",
                                 isExpanded: true,
-                                onChanged: (value) {
-                                  activeBlueprintChangeNotifier
+                                onChanged: (value) async {
+                                  await activeBlueprintChangeNotifier
                                       .changeActiveBlueprint(value!);
                                 }),
                           ),
@@ -453,8 +453,8 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Container(
           height: 800,
           child: Consumer2<MapChangeNotifier, ActiveBlueprintChangeNotifier>(
-              builder: (context, mapChangeNotifier, blueprintChangeNotifier,
-                  widget) {
+              builder: (context, mapChangeNotifier,
+                  activeBlueprintChangeNotifier, widget) {
             //This consumes the notifying of two different notifiers. Splitting them up like this allows for more flexibility in what to rebuild, when.
             print("REBUILDING");
             return geomap.showMap(mapChangeNotifier.dbCom.model);

@@ -258,8 +258,7 @@ class GeoMap {
       List<ColoredTile>? tempBlueprintTiles =
           model.getActiveBlueprint()?.getTiles();
 
-      print(
-          "The gathered blueprint tiles ${tempBlueprintTiles.toString()} for blueprint ${model.getActiveBlueprint()?.getName()}");
+      //print("The gathered blueprint tiles ${tempBlueprintTiles.toString()} for blueprint ${model.getActiveBlueprint()?.getName()}");
       if (tempBlueprintTiles != null) {
         _blueprintPolygons = tempBlueprintTiles
             .map((tile) => _createPolygon(
