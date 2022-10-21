@@ -63,7 +63,6 @@ class _MyHomePageState extends State<MyHomePage> {
   late GeoMap geomap;
   Color selectedColor = Colors.black;
   bool penMode = true;
-  //bool showBlueprint = false;
 
   final List<Color> colourPaletteHex = [
     Color(0xff8F4D7F),
@@ -406,8 +405,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                       .setShowBlueprint(value!);
                                 });
                               }),
-                        ],
-                      ),
                     ],
                   ),
                 )],
@@ -415,25 +412,26 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           );
         });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Container(
+        title: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Container(
           margin: const EdgeInsets.all(16.0),
           child: DropdownButtonFormField(
               decoration: const InputDecoration(
                 labelText: 'Edit blueprint',
               ),
-              items: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getAvailableBlueprints().map((Blueprint bp) {
+              items: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getAvailableBlueprints().map((Blueprint bp) {
                 return DropdownMenuItem(value: bp.getBlueprintID(), child: Container(margin: const EdgeInsets.symmetric(horizontal: 8), child: Text(bp.getName())));
               }).toList(),
-              value: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getActiveBlueprint()!.getBlueprintID(),
+              value: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getActiveBlueprint()!.getBlueprintID(),
               isExpanded: true,
               onChanged: (value) {
-                Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setActiveBlueprint(value!);
+                Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.setActiveBlueprint(value!);
               }
           ),
         ) : const Text("Map"),
@@ -458,7 +456,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               }),
         ],
-        backgroundColor: geomap.isBlueprintEditing
+        backgroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing()
             ? Colors.lightBlue
             : Colors.black,
       ),

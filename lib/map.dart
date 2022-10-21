@@ -14,9 +14,6 @@ class GeoMap {
 
   final GeoHasher _geoHasher = GeoHasher();
 
-  bool showBlueprint = false;
-  bool isBlueprintEditing = false;
-
   //Should be downloaded from database
 
   List<Polyline> _gridX = [];
@@ -253,7 +250,7 @@ class GeoMap {
 
     //TODO change _createPolygon to something else
     List<Polygon> _blueprintPolygons = [];
-    if (isBlueprintEditing || model.shouldShowBlueprint()) {
+    if (model.getIsBluePrintEditing() || model.shouldShowBlueprint()) {
       List<ColoredTile>? tempBlueprintTiles =
           model.getActiveBlueprint()?.getTiles();
 
