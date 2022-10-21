@@ -30,7 +30,8 @@ class ActiveBlueprintChangeNotifier extends ChangeNotifier {
     await dbCom.initFirebase();
     _listenToActiveBlueprintChange(
         dbCom.model.getActiveBlueprint()?.getBlueprintID());
-    //print(dbCom.model.getActiveBlueprint()?.getBlueprintID());
+    print(
+        "YAHJAHJAHJAHJAHJAH: ${dbCom.model.getActiveBlueprint()?.getBlueprintID()}");
   }
 
   //Change which blueprint is active and therefore also from which we are listening to changes.
@@ -69,7 +70,8 @@ class ActiveBlueprintChangeNotifier extends ChangeNotifier {
   }
 
 //Adds a tile to the active blueprint's database
-  void addTileToActiveBlueprint(Color color, String geohash) async {
+  void addTileToActiveBlueprint(
+      Color color, String geohash, bool penMode) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref().child(dbCom.blueprintsPath);
     //print("HERE");
@@ -91,7 +93,12 @@ class ActiveBlueprintChangeNotifier extends ChangeNotifier {
           activeBlueprintRef.child("tiles").child(geohash);
       //print("newtile: " + newTileRef.path);
 
-      await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
+      if (penMode) {
+        await newTileRef
+            .set({"r": color.red, "g": color.green, "b": color.blue});
+      } else {
+        await newTileRef.remove();
+      }
     }
 
     //notifyListeners();
@@ -353,6 +360,16 @@ class DatabaseCommunicator {
       Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
       //Do something with the data
       await _updateUserModel(userID, dataMap, () {});
+
+      if (dataMap["activeBlueprintID"] != null &&
+          dataMap["activeBlueprintID"] != false) {
+        model.setActiveBlueprint(dataMap["activeBlueprintID"]);
+        print("Vi är häraeller ${dataMap["activeBlueprintID"]}");
+      } else if (userID != null) {
+        //changeActiveBlueprint(userID, _personalBlueprintName);
+        model.setActiveBlueprint(userID);
+        print("Vi är här");
+      }
     }
   }
 
@@ -374,9 +391,11 @@ class DatabaseCommunicator {
       if (dataMap["activeBlueprintID"] != null &&
           dataMap["activeBlueprintID"] != false) {
         model.setActiveBlueprint(dataMap["activeBlueprintID"]);
+        print("Vi är häraeller ${dataMap["activeBlueprintID"]}");
       } else if (userID != null) {
         //changeActiveBlueprint(userID, _personalBlueprintName);
         model.setActiveBlueprint(userID);
+        print("Vi är här");
       }
 
       //SAVING TO MODEL
@@ -607,6 +626,7 @@ class DatabaseCommunicator {
       DatabaseReference ref =
           FirebaseDatabase.instance.ref(usersPath + "/" + userID);
       DatabaseEvent event = await ref.once();
+
       final theUser = event.snapshot.value;
       if (theUser != null) {
         //the user exists BOTH locally and in the database so just initialize the user.

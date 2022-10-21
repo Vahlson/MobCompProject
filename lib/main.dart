@@ -132,7 +132,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   selectedColor,
                   _geoHasher.encode(
                       tap.tapPosition.longitude, tap.tapPosition.latitude,
-                      precision: 8));
+                      precision: 8),
+                  penMode);
         }
 
         //});
@@ -485,19 +486,15 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: Text(bp.getName())));
                     }).toList(),
                     value: Provider.of<ActiveBlueprintChangeNotifier>(context,
-                            listen: false)
-                        .dbCom
-                        .model
-                        .getCurrentUser()!
-                        .getActiveBlueprint()!
-                        .getBlueprintID(),
+                                listen: false)
+                            .getActiveBlueprint()
+                            ?.getBlueprintID() ??
+                        "",
                     isExpanded: true,
-                    onChanged: (value) {
-                      Provider.of<ActiveBlueprintChangeNotifier>(context,
+                    onChanged: (value) async {
+                      await Provider.of<ActiveBlueprintChangeNotifier>(context,
                               listen: false)
-                          .dbCom
-                          .model
-                          .setActiveBlueprint(value!);
+                          .changeActiveBlueprint(value!);
                     }),
               )
             : const Text("Map"),
