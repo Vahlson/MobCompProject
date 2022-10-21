@@ -106,6 +106,10 @@ class User {
     return List<Blueprint>.from(_availableBlueprints);
   }
 
+  List<Group> getAvailableGroups() {
+    return List<Group>.from(_groups);
+  }
+
   void setUserBlueprints(List<Blueprint> newBlueprints) {
     _availableBlueprints = newBlueprints;
   }

@@ -20,7 +20,13 @@ void main() {
         create: (context) => MapChangeNotifier(dbCom),
       ),
       ChangeNotifierProvider(
-        create: (context) => BlueprintChangeNotifier(dbCom),
+        create: (context) => ActiveBlueprintChangeNotifier(dbCom),
+      ),
+      ChangeNotifierProvider(
+        create: (context) => GroupsChangeNotifier(dbCom),
+      ),
+      ChangeNotifierProvider(
+        create: (context) => AvailableBlueprintsNotifier(dbCom),
       ),
     ],
     child: const MyApp(),
@@ -116,9 +122,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 selectedColor,
                 _geoHasher.encode(
                     tap.tapPosition.longitude, tap.tapPosition.latitude,
-                    precision: 8), penMode);
+                    precision: 8),
+                penMode);
           } else {
-            Provider.of<BlueprintChangeNotifier>(context, listen: false)
+            Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
                 .addTileToActiveBlueprint(
                     selectedColor,
                     _geoHasher.encode(
@@ -152,14 +159,22 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     Provider.of<MapChangeNotifier>(context, listen: false).unsubscribe();
-    Provider.of<BlueprintChangeNotifier>(context, listen: false).unsubscribe();
+    Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+        .unsubscribe();
+    Provider.of<GroupsChangeNotifier>(context, listen: false).unsubscribe();
+    Provider.of<AvailableBlueprintsNotifier>(context, listen: false)
+        .unsubscribe();
 
     super.dispose();
   }
 
   void initDatabase() async {
     await Provider.of<MapChangeNotifier>(context, listen: false).initialize();
-    await Provider.of<BlueprintChangeNotifier>(context, listen: false)
+    await Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+        .initialize();
+    await Provider.of<GroupsChangeNotifier>(context, listen: false)
+        .initialize();
+    await Provider.of<AvailableBlueprintsNotifier>(context, listen: false)
         .initialize();
   }
 
@@ -175,17 +190,27 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (BuildContext bc) {
           return Padding(
-            padding: const EdgeInsets.only(top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
+            padding: const EdgeInsets.only(
+                top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
             child: Wrap(
               children: [
                 Row(
                   children: const [
-                    Icon(Icons.palette_rounded,),
-                    SizedBox(width: 8,),
-                    Text("Palette", style: TextStyle(fontSize: 22),),
+                    Icon(
+                      Icons.palette_rounded,
+                    ),
+                    SizedBox(
+                      width: 8,
+                    ),
+                    Text(
+                      "Palette",
+                      style: TextStyle(fontSize: 22),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 16,),
+                const SizedBox(
+                  height: 48,
+                ),
                 GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
@@ -253,7 +278,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       const Text("blot", style: TextStyle(fontSize: 22),),
                     ],
                   ),
-                  const SizedBox(height: 8,),
+                  const SizedBox(height: 16,),
                   //const Text("Navigate to"),
                   TextButton.icon(
                       onPressed: (){
@@ -300,7 +325,7 @@ class _MyHomePageState extends State<MyHomePage> {
         });
   }
 
-  void _showBlueprintMenu (context) {
+  void _showBlueprintMenu(parentContext) {
     showModalBottomSheet(
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
@@ -308,7 +333,7 @@ class _MyHomePageState extends State<MyHomePage> {
             topRight: Radius.circular(20.0),
           ),
         ),
-        context: context,
+        context: parentContext,
         builder: (BuildContext context) {
           return StatefulBuilder(
             builder: (BuildContext context, StateSetter setActiveBlueprintState) {
@@ -325,7 +350,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           Text("Blueprint", style: TextStyle(fontSize: 22),),
                         ],
                       ),
-                      const SizedBox(height: 8,),
+                      const SizedBox(height: 16,),
                       DropdownButtonFormField(
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
@@ -406,8 +431,9 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Container(
           height: 800,
-          child: Consumer2<MapChangeNotifier, BlueprintChangeNotifier>(builder:
-              (context, mapChangeNotifier, blueprintChangeNotifier, widget) {
+          child: Consumer2<MapChangeNotifier, ActiveBlueprintChangeNotifier>(
+              builder: (context, mapChangeNotifier, blueprintChangeNotifier,
+                  widget) {
             //This consumes the notifying of two different notifiers. Splitting them up like this allows for more flexibility in what to rebuild, when.
             print("REBUILDING");
             return geomap.showMap(mapChangeNotifier.dbCom.model);
@@ -425,37 +451,41 @@ class _MyHomePageState extends State<MyHomePage> {
         shape: const CircularNotchedRectangle(),
         child: Row(
           children: [
-            IconButton(icon: const Icon(Icons.menu), onPressed: () {
-              _showNavMenu(context);
-            }),
+            IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  _showNavMenu(context);
+                }),
             const Spacer(),
             IconButton(
                 icon: Center(
                   child: Stack(
-                      children: <Widget>[
-                        const Center(child: Icon(CustomIcons.eraser, size: 18)),
-                        Center(
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 400),
-                            height: penMode ? 0 : 36,
-                            width: penMode ? 0 : 36,
-                            decoration: const BoxDecoration(
-                              color: Colors.black26,
-                              shape: BoxShape.circle,
-                            ),
+                    children: <Widget>[
+                      const Center(child: Icon(CustomIcons.eraser, size: 18)),
+                      Center(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 400),
+                          height: penMode ? 0 : 36,
+                          width: penMode ? 0 : 36,
+                          decoration: const BoxDecoration(
+                            color: Colors.black26,
+                            shape: BoxShape.circle,
                           ),
-                        )
-                      ],
+                        ),
+                      )
+                    ],
                   ),
                 ),
                 onPressed: () {
                   setState(() {
                     penMode = !penMode;
                   });
-            }),
-            IconButton(icon: const Icon(Icons.architecture), onPressed: () {
-              _showBlueprintMenu(context);
-            }),
+                }),
+            IconButton(
+                icon: const Icon(Icons.architecture),
+                onPressed: () {
+                  _showBlueprintMenu(context);
+                }),
           ],
         ),
       ),
@@ -466,7 +496,7 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         child: const Icon(Icons.palette),
       ),
-    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
