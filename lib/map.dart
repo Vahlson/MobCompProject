@@ -240,13 +240,16 @@ class GeoMap {
   }
 
   Widget showMap(Model model) {
-    List<Polygon> _polygons = model
-        .getTiles()
-        .map((tile) => _createPolygon(
-            ColoredTile(_getGeoCenter(tile.position),
-                tile.color.withOpacity(selectedOpacity)),
-            1))
-        .toList();
+    List<Polygon> _polygons = [];
+    if (!model.getIsBluePrintEditing()) {
+      _polygons = model
+          .getTiles()
+          .map((tile) => _createPolygon(
+              ColoredTile(_getGeoCenter(tile.position),
+                  tile.color.withOpacity(selectedOpacity)),
+              1))
+          .toList();
+    }
 
     //TODO change _createPolygon to something else
     List<Polygon> _blueprintPolygons = [];
@@ -254,15 +257,21 @@ class GeoMap {
       List<ColoredTile>? tempBlueprintTiles =
           model.getActiveBlueprint()?.getTiles();
 
-      print(
-          "The gathered blueprint tiles ${tempBlueprintTiles.toString()} for blueprint ${model.getActiveBlueprint()?.getName()}");
+      //print("The gathered blueprint tiles ${tempBlueprintTiles.toString()} for blueprint ${model.getActiveBlueprint()?.getName()}");
       if (tempBlueprintTiles != null) {
         _blueprintPolygons = tempBlueprintTiles
             .map((tile) => _createPolygon(
                 ColoredTile(_getGeoCenter(tile.position), tile.color),
-                model.shouldShowBlueprint() ? 0.5 : 1))
+                model.shouldShowBlueprint()
+                    ? (model.getIsBluePrintEditing() ? 1 : 0.5)
+                    : 1))
             .toList();
       }
+    }
+
+    //Hide proximity if we are blueprintEditing
+    if (model.getIsBluePrintEditing()) {
+      _drawableArea = [];
     }
 
     return FlutterMap(

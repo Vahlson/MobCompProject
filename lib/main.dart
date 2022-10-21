@@ -114,24 +114,28 @@ class _MyHomePageState extends State<MyHomePage> {
         MapEventTap tap = event as MapEventTap;
         //setState(() {
         //Change this to just publishing tile to database
-        if (geomap.isValidTilePosition(
-            tap.tapPosition.latitude, tap.tapPosition.longitude)) {
-          if (!Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing()) {
+
+        if (!Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+            .getIsBluePrintEditing()) {
+          if (geomap.isValidTilePosition(
+              tap.tapPosition.latitude, tap.tapPosition.longitude)) {
             Provider.of<MapChangeNotifier>(context, listen: false).addTile(
                 selectedColor,
                 _geoHasher.encode(
                     tap.tapPosition.longitude, tap.tapPosition.latitude,
                     precision: 8),
                 penMode);
-          } else {
-            Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
-                .addTileToActiveBlueprint(
-                    selectedColor,
-                    _geoHasher.encode(
-                        tap.tapPosition.longitude, tap.tapPosition.latitude,
-                        precision: 8));
           }
+        } else {
+          Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+              .addTileToActiveBlueprint(
+                  selectedColor,
+                  _geoHasher.encode(
+                      tap.tapPosition.longitude, tap.tapPosition.latitude,
+                      precision: 8),
+                  penMode);
         }
+
         //});
       } else {
         setState(() {
@@ -157,12 +161,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    Provider.of<MapChangeNotifier>(context, listen: false).unsubscribe();
+    /* Provider.of<MapChangeNotifier>(context, listen: false).unsubscribe();
     Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
         .unsubscribe();
     Provider.of<GroupsChangeNotifier>(context, listen: false).unsubscribe();
     Provider.of<AvailableBlueprintsNotifier>(context, listen: false)
-        .unsubscribe();
+        .unsubscribe(); */
 
     super.dispose();
   }
@@ -264,62 +268,98 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (BuildContext context) {
           return Wrap(
-            children: [Container(
-              padding: const EdgeInsets.only(top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Image.asset("assets/icon.png", height: 22, width: 22,),
-                      const SizedBox(width: 8,),
-                      const Text("blot", style: TextStyle(fontSize: 22),),
-                    ],
-                  ),
-                  const SizedBox(height: 16,),
-                  //const Text("Navigate to"),
-                  TextButton.icon(
-                      onPressed: (){
-                        setState(() {
-                          Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).setIsBluePrintEditing(false);
-                        });
-                        Navigator.pop(context);
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing() ? Colors.black54 : Colors.black,
-                      ),
-                      icon: const Icon(Icons.map),
-                      label: Row(children: const [Text("Map")])),
-                  TextButton.icon(
-                      onPressed: (){
-                        Navigator.pop(context);
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const MyGroupPage(),
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.black54,
-                      ),
-                      icon: const Icon(Icons.group),
-                      label: Row(children: const [Text("Groups")])),
-                  TextButton.icon(
-                      onPressed: (){
-                        setState(() {
-                          Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).setIsBluePrintEditing(true);
-                        });
-                        Navigator.pop(context);
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).getIsBluePrintEditing() ? Colors.black : Colors.black54,
-                      ),
-                      icon: const Icon(Icons.architecture),
-                      label: Row(children: const [Text("Edit blueprints")])),
-                ],
-              ),
-            )],
+            children: [
+              Container(
+                padding: const EdgeInsets.only(
+                    top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          "assets/icon.png",
+                          height: 22,
+                          width: 22,
+                        ),
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        const Text(
+                          "blot",
+                          style: TextStyle(fontSize: 22),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    //const Text("Navigate to"),
+                    TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            Provider.of<ActiveBlueprintChangeNotifier>(context,
+                                    listen: false)
+                                .setIsBluePrintEditing(false);
+                            Provider.of<ActiveBlueprintChangeNotifier>(context,
+                                    listen: false)
+                                .setShowBlueprint(true);
+                          });
+                          Navigator.pop(context);
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor:
+                              Provider.of<ActiveBlueprintChangeNotifier>(
+                                          context,
+                                          listen: false)
+                                      .getIsBluePrintEditing()
+                                  ? Colors.black54
+                                  : Colors.black,
+                        ),
+                        icon: const Icon(Icons.map),
+                        label: Row(children: const [Text("Map")])),
+                    TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => const MyGroupPage(),
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.black54,
+                        ),
+                        icon: const Icon(Icons.group),
+                        label: Row(children: const [Text("Groups")])),
+                    TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            Provider.of<ActiveBlueprintChangeNotifier>(context,
+                                    listen: false)
+                                .setIsBluePrintEditing(true);
+                            Provider.of<ActiveBlueprintChangeNotifier>(context,
+                                    listen: false)
+                                .setShowBlueprint(true);
+                          });
+                          Navigator.pop(context);
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor:
+                              Provider.of<ActiveBlueprintChangeNotifier>(
+                                          context,
+                                          listen: false)
+                                      .getIsBluePrintEditing()
+                                  ? Colors.black
+                                  : Colors.black54,
+                        ),
+                        icon: const Icon(Icons.architecture),
+                        label: Row(children: const [Text("Edit blueprints")])),
+                  ],
+                ),
+              )
+            ],
           );
         });
   }
@@ -335,11 +375,12 @@ class _MyHomePageState extends State<MyHomePage> {
         context: parentContext,
         builder: (BuildContext context) {
           return Consumer2<AvailableBlueprintsNotifier,
-              ActiveBlueprintChangeNotifier>(
-            builder: (context, availableBlueprintsNotifier,
-                activeBlueprintChangeNotifier, child) {
-              print("REBUILDING");
-              return StatefulBuilder(builder:
+                  ActiveBlueprintChangeNotifier>(
+              builder: (context, availableBlueprintsNotifier,
+                  activeBlueprintChangeNotifier, child) {
+            print("REBUILDING");
+            return StatefulBuilder(
+              builder:
                   (BuildContext context, StateSetter setActiveBlueprintState) {
                 return Wrap(
                   children: [
@@ -390,8 +431,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                         ?.getBlueprintID() ??
                                     "",
                                 isExpanded: true,
-                                onChanged: (value) {
-                                  activeBlueprintChangeNotifier
+                                onChanged: (value) async {
+                                  await activeBlueprintChangeNotifier
                                       .changeActiveBlueprint(value!);
                                 }),
                           ),
@@ -405,36 +446,58 @@ class _MyHomePageState extends State<MyHomePage> {
                                       .setShowBlueprint(value!);
                                 });
                               }),
-                    ],
-                  ),
-                )],
-              );
-            },
-          );
+                        ],
+                      ),
+                    )
+                  ],
+                );
+              },
+            );
+          });
         });
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing() ? Container(
-          margin: const EdgeInsets.all(16.0),
-          child: DropdownButtonFormField(
-              decoration: const InputDecoration(
-                labelText: 'Edit blueprint',
-              ),
-              items: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getAvailableBlueprints().map((Blueprint bp) {
-                return DropdownMenuItem(value: bp.getBlueprintID(), child: Container(margin: const EdgeInsets.symmetric(horizontal: 8), child: Text(bp.getName())));
-              }).toList(),
-              value: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getActiveBlueprint()!.getBlueprintID(),
-              isExpanded: true,
-              onChanged: (value) {
-                Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.setActiveBlueprint(value!);
-              }
-          ),
-        ) : const Text("Map"),
+        title: Provider.of<ActiveBlueprintChangeNotifier>(context,
+                    listen: false)
+                .dbCom
+                .model
+                .getIsBluePrintEditing()
+            ? Container(
+                margin: const EdgeInsets.all(16.0),
+                child: DropdownButtonFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Edit blueprint',
+                    ),
+                    items: Provider.of<ActiveBlueprintChangeNotifier>(context,
+                            listen: false)
+                        .dbCom
+                        .model
+                        .getCurrentUser()!
+                        .getAvailableBlueprints()
+                        .map((Blueprint bp) {
+                      return DropdownMenuItem(
+                          value: bp.getBlueprintID(),
+                          child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(bp.getName())));
+                    }).toList(),
+                    value: Provider.of<ActiveBlueprintChangeNotifier>(context,
+                                listen: false)
+                            .getActiveBlueprint()
+                            ?.getBlueprintID() ??
+                        "",
+                    isExpanded: true,
+                    onChanged: (value) async {
+                      await Provider.of<ActiveBlueprintChangeNotifier>(context,
+                              listen: false)
+                          .changeActiveBlueprint(value!);
+                    }),
+              )
+            : const Text("Map"),
         actions: [
           IconButton(
               icon: const Icon(Icons.my_location),
@@ -442,8 +505,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 geomap.centerMapOnUser();
               }),
           IconButton(
-            //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
-              icon: Icon((geomap.selectedOpacity == 1) ? CustomIcons.humidity_high : ((geomap.selectedOpacity == 0.5) ? CustomIcons.humidity_mid : CustomIcons.humidity_low),),
+              //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
+              icon: Icon(
+                (geomap.selectedOpacity == 1)
+                    ? CustomIcons.humidity_high
+                    : ((geomap.selectedOpacity == 0.5)
+                        ? CustomIcons.humidity_mid
+                        : CustomIcons.humidity_low),
+              ),
               onPressed: () {
                 setState(() {
                   if (geomap.selectedOpacity == 1) {
@@ -456,16 +525,20 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               }),
         ],
-        backgroundColor: Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false).dbCom.model.getIsBluePrintEditing()
-            ? Colors.lightBlue
-            : Colors.black,
+        backgroundColor:
+            Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+                    .dbCom
+                    .model
+                    .getIsBluePrintEditing()
+                ? Colors.lightBlue
+                : Colors.black,
       ),
       body: Center(
         child: Container(
           height: 800,
           child: Consumer2<MapChangeNotifier, ActiveBlueprintChangeNotifier>(
-              builder: (context, mapChangeNotifier, blueprintChangeNotifier,
-                  widget) {
+              builder: (context, mapChangeNotifier,
+                  activeBlueprintChangeNotifier, widget) {
             //This consumes the notifying of two different notifiers. Splitting them up like this allows for more flexibility in what to rebuild, when.
             print("REBUILDING");
             return geomap.showMap(mapChangeNotifier.dbCom.model);
@@ -489,6 +562,14 @@ class _MyHomePageState extends State<MyHomePage> {
                   _showNavMenu(context);
                 }),
             const Spacer(),
+            !Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
+                    .getIsBluePrintEditing()
+                ? IconButton(
+                    icon: const Icon(Icons.architecture),
+                    onPressed: () {
+                      _showBlueprintMenu(context);
+                    })
+                : SizedBox(),
             IconButton(
                 icon: Center(
                   child: Stack(
@@ -512,11 +593,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   setState(() {
                     penMode = !penMode;
                   });
-                }),
-            IconButton(
-                icon: const Icon(Icons.architecture),
-                onPressed: () {
-                  _showBlueprintMenu(context);
                 }),
           ],
         ),
