@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late GeoMap geomap;
   Color selectedColor = Colors.black;
   bool penMode = true;
-  bool showBlueprint = false;
+  //bool showBlueprint = false;
 
   final List<Color> colourPaletteHex = [
     Color(0xff8F4D7F),
@@ -335,45 +335,79 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         context: parentContext,
         builder: (BuildContext context) {
-          return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setActiveBlueprintState) {
-              return Wrap(
-                children: [Container(
-                  padding: const EdgeInsets.only(top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.architecture,),
-                          SizedBox(width: 8,),
-                          Text("Blueprint", style: TextStyle(fontSize: 22),),
+          return Consumer2<AvailableBlueprintsNotifier,
+              ActiveBlueprintChangeNotifier>(
+            builder: (context, availableBlueprintsNotifier,
+                activeBlueprintChangeNotifier, child) {
+              print("REBUILDING");
+              return StatefulBuilder(builder:
+                  (BuildContext context, StateSetter setActiveBlueprintState) {
+                return Wrap(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.only(
+                          top: 16.0, bottom: 24.0, left: 24.0, right: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(
+                                Icons.architecture,
+                              ),
+                              SizedBox(
+                                width: 8,
+                              ),
+                              Text(
+                                "Active blueprint",
+                                style: TextStyle(fontSize: 22),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 16,
+                          ),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            child: DropdownButtonFormField(
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'Active blueprint',
+                                ),
+                                items: availableBlueprintsNotifier
+                                    .getAvailableBlueprints()
+                                    .map((Blueprint bp) {
+                                  print("A blueprint yo: ${bp.getName()}");
+
+                                  return DropdownMenuItem(
+                                      value: bp.getBlueprintID(),
+                                      child: Container(
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 8),
+                                          child: Text(bp.getName())));
+                                }).toList(),
+                                value: activeBlueprintChangeNotifier
+                                        .getActiveBlueprint()
+                                        ?.getBlueprintID() ??
+                                    "",
+                                isExpanded: true,
+                                onChanged: (value) {
+                                  activeBlueprintChangeNotifier
+                                      .changeActiveBlueprint(value!);
+                                }),
+                          ),
+                          CheckboxListTile(
+                              title: const Text("Show blueprint"),
+                              value: activeBlueprintChangeNotifier
+                                  .shouldShowBlueprint(),
+                              onChanged: (value) {
+                                setActiveBlueprintState(() {
+                                  activeBlueprintChangeNotifier
+                                      .setShowBlueprint(value!);
+                                });
+                              }),
                         ],
                       ),
-                      const SizedBox(height: 16,),
-                      DropdownButtonFormField(
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Active blueprint',
-                          ),
-                          items: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getAvailableBlueprints().map((Blueprint bp) {
-                            return DropdownMenuItem(value: bp.getBlueprintID(), child: Container(margin: const EdgeInsets.symmetric(horizontal: 8), child: Text(bp.getName())));
-                          }).toList(),
-                          value: Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.getCurrentUser()!.getActiveBlueprint()!.getBlueprintID(),
-                          isExpanded: true,
-                          onChanged: (value) {
-                            Provider.of<BlueprintChangeNotifier>(context, listen: false).dbCom.model.setActiveBlueprint(value!);
-                          }
-                      ),
-                      CheckboxListTile(
-                          title: const Text("Show blueprint"),
-                          value: showBlueprint,
-                          onChanged: (value) {
-                            setActiveBlueprintState(() {
-                              showBlueprint = value!;
-                              geomap.showBlueprint = showBlueprint;
-                            });
-                          }),
                     ],
                   ),
                 )],

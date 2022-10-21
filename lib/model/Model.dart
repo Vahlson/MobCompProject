@@ -8,6 +8,15 @@ class Model {
   User? _user;
 
   bool _isBlueprintEditing = false;
+  bool _showBlueprint = false;
+
+  bool shouldShowBlueprint() {
+    return _showBlueprint;
+  }
+
+  void setShowBlueprint(bool value) {
+    _showBlueprint = value;
+  }
 
   void setTiles(List<ColoredTile> newTiles) {
     _tiles = newTiles;

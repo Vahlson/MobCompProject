@@ -15,6 +15,7 @@ class GeoMap {
   final GeoHasher _geoHasher = GeoHasher();
 
   bool showBlueprint = false;
+  bool isBlueprintEditing = false;
 
   //Should be downloaded from database
 
@@ -58,7 +59,8 @@ class GeoMap {
     }
 
     location.onLocationChanged.listen((LocationData userLocation) {
-      _userPosition = LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
+      _userPosition =
+          LatLng(userLocation.latitude ?? 0, userLocation.longitude ?? 0);
 
       _showDrawableArea();
     });
@@ -173,7 +175,6 @@ class GeoMap {
       }
 
       _gridY = newGridY;
-
     } else {
       _gridX = [];
       _gridY = [];
@@ -245,12 +246,14 @@ class GeoMap {
     List<Polygon> _polygons = model
         .getTiles()
         .map((tile) => _createPolygon(
-            ColoredTile(_getGeoCenter(tile.position), tile.color.withOpacity(selectedOpacity)), 1))
+            ColoredTile(_getGeoCenter(tile.position),
+                tile.color.withOpacity(selectedOpacity)),
+            1))
         .toList();
 
     //TODO change _createPolygon to something else
     List<Polygon> _blueprintPolygons = [];
-    if (isBlueprintEditing || showBlueprint) {
+    if (isBlueprintEditing || model.shouldShowBlueprint()) {
       List<ColoredTile>? tempBlueprintTiles =
           model.getActiveBlueprint()?.getTiles();
 
@@ -259,7 +262,8 @@ class GeoMap {
       if (tempBlueprintTiles != null) {
         _blueprintPolygons = tempBlueprintTiles
             .map((tile) => _createPolygon(
-                ColoredTile(_getGeoCenter(tile.position), tile.color), showBlueprint ? 0.5 : 1))
+                ColoredTile(_getGeoCenter(tile.position), tile.color),
+                model.shouldShowBlueprint() ? 0.5 : 1))
             .toList();
       }
     }
