@@ -14,6 +14,8 @@ class GeoMap {
 
   final GeoHasher _geoHasher = GeoHasher();
 
+  bool isBlueprintEditing = false;
+
   //Should be downloaded from database
 
   List<Polyline> _gridX = [];
@@ -84,21 +86,21 @@ class GeoMap {
     return LatLng(geohashLatlng[1], geohashLatlng[0]);
   }
 
-  List<LatLng> _createSquare(ColoredTile tile) {
+  List<LatLng> _createSquare(ColoredTile tile, scale) {
     double lat = tile.position.latitude;
     double lng = tile.position.longitude;
 
     return [
-      LatLng(lat + _latDiff, lng + _lngDiff),
-      LatLng(lat + _latDiff, lng - _lngDiff),
-      LatLng(lat - _latDiff, lng - _lngDiff),
-      LatLng(lat - _latDiff, lng + _lngDiff),
+      LatLng(lat + _latDiff * scale, lng + _lngDiff * scale),
+      LatLng(lat + _latDiff * scale, lng - _lngDiff * scale),
+      LatLng(lat - _latDiff * scale, lng - _lngDiff * scale),
+      LatLng(lat - _latDiff * scale, lng + _lngDiff * scale),
     ];
   }
 
-  Polygon _createPolygon(ColoredTile tile) {
+  Polygon _createPolygon(ColoredTile tile, double scale) {
     return Polygon(
-      points: _createSquare(tile),
+      points: _createSquare(tile, scale),
       color: tile.color,
       isFilled: true,
       borderStrokeWidth: 0,
@@ -247,12 +249,20 @@ class GeoMap {
         .toList();
 
     //TODO change _createPolygon to something else
-    List<Polygon>? _blueprintPolygons = model
-        .getActiveBlueprint()
-        ?.getTiles()
-        .map((tile) => _createPolygon(
-            ColoredTile(_getGeoCenter(tile.position), tile.color)))
-        .toList();
+    List<Polygon> _blueprintPolygons = [];
+    if (isBlueprintEditing) {
+      List<ColoredTile>? tempBlueprintTiles =
+          model.getActiveBlueprint()?.getTiles();
+
+      print(
+          "The gathered blueprint tiles ${tempBlueprintTiles.toString()} for blueprint ${model.getActiveBlueprint()?.getName()}");
+      if (tempBlueprintTiles != null) {
+        _blueprintPolygons = tempBlueprintTiles
+            .map((tile) => _createPolygon(
+                ColoredTile(_getGeoCenter(tile.position), tile.color), 0.5))
+            .toList();
+      }
+    }
 
     return FlutterMap(
       options: MapOptions(
@@ -277,7 +287,7 @@ class GeoMap {
         //Colored tiles
         PolygonLayer(
           polygonCulling: false,
-          polygons: _polygons + _drawableArea,
+          polygons: _polygons + _blueprintPolygons + _drawableArea,
         ),
 
         //Grid

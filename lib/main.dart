@@ -94,6 +94,8 @@ class _MyHomePageState extends State<MyHomePage> {
   //Move this
   GeoHasher _geoHasher = GeoHasher();
 
+  //TODO Remove?
+
   initMap() {
     _mapStream = _mapController.mapEventStream;
     geomap = GeoMap(_mapController);
@@ -101,28 +103,27 @@ class _MyHomePageState extends State<MyHomePage> {
     geomap.initGeoMap().then((_) => geomap.centerMapOnUser());
 
     //Checks for user taps
-    _mapStream.listen((event) {
+    _mapStream.listen((event) async {
       if (event.source == MapEventSource.tap) {
         MapEventTap tap = event as MapEventTap;
         //setState(() {
         //Change this to just publishing tile to database
         if (geomap.isValidTilePosition(
             tap.tapPosition.latitude, tap.tapPosition.longitude)) {
-          Provider.of<MapChangeNotifier>(context, listen: false).addTile(
-              selectedColor,
-              _geoHasher.encode(
-                  tap.tapPosition.longitude, tap.tapPosition.latitude,
-                  precision: 8), penMode);
-
-          //TODO REMOVE!
-          Provider.of<BlueprintChangeNotifier>(context, listen: false)
-              .createNewBlueprint();
-
-          Provider.of<BlueprintChangeNotifier>(context, listen: false).addTile(
-              selectedColor,
-              _geoHasher.encode(
-                  tap.tapPosition.longitude, tap.tapPosition.latitude,
-                  precision: 8));
+          if (!geomap.isBlueprintEditing) {
+            Provider.of<MapChangeNotifier>(context, listen: false).addTile(
+                selectedColor,
+                _geoHasher.encode(
+                    tap.tapPosition.longitude, tap.tapPosition.latitude,
+                    precision: 8));
+          } else {
+            Provider.of<BlueprintChangeNotifier>(context, listen: false)
+                .addTileToActiveBlueprint(
+                    selectedColor,
+                    _geoHasher.encode(
+                        tap.tapPosition.longitude, tap.tapPosition.latitude,
+                        precision: 8));
+          }
         }
         //});
       } else {
@@ -139,16 +140,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    //db = DatabaseCommunicator();
-    //db.initFirebase();
-
-    // TODO: implement initState
     initMap();
 
     initDatabase();
 
     super.initState();
     //setUpFirebase();
+  }
+
+  @override
+  void dispose() {
+    Provider.of<MapChangeNotifier>(context, listen: false).unsubscribe();
+    Provider.of<BlueprintChangeNotifier>(context, listen: false).unsubscribe();
+
+    super.dispose();
   }
 
   void initDatabase() async {
@@ -286,14 +291,26 @@ class _MyHomePageState extends State<MyHomePage> {
               }),
         ],
       ),
+        backgroundColor: geomap.isBlueprintEditing
+            ? Color.fromRGBO(0, 0, 255, 1)
+            : Color.fromRGBO(255, 0, 0, 1),
+      ),
       body: Center(
         child: Container(
-          height: 900,
-          child: Consumer<MapChangeNotifier>(
+          height: 800,
+          child: Consumer2<MapChangeNotifier, BlueprintChangeNotifier>(builder:
+              (context, mapChangeNotifier, blueprintChangeNotifier, widget) {
+            //This consumes the notifying of two different notifiers. Splitting them up like this allows for more flexibility in what to rebuild, when.
+            print("REBUILDING");
+            return geomap.showMap(mapChangeNotifier.dbCom.model);
+          }),
+          /* //OLD
+          Consumer<MapChangeNotifier>(
             builder: (context, changeNotifier, child) {
+              print("REBUILDING");
               return geomap.showMap(changeNotifier.dbCom.model);
             },
-          ),
+          ), */
         ),
       ),
       bottomNavigationBar: BottomAppBar(
@@ -324,6 +341,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 onPressed: () {
+                  Provider.of<MapChangeNotifier>(context, listen: false)
+                      .dbCom
+                      .leaveGroup("-NELoqOb007SrgLgwM46");
+
                   setState(() {
                     penMode = !penMode;
                   });

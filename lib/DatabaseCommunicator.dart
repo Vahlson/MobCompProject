@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:artmap/groups.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
@@ -11,64 +14,65 @@ import 'model/Model.dart';
 class BlueprintChangeNotifier extends ChangeNotifier {
   DatabaseCommunicator dbCom;
   BlueprintChangeNotifier(this.dbCom);
+  StreamSubscription<DatabaseEvent>? databaseSubscription;
 
-  void _listenToBlueprintChange() {
-    dbCom.listenToDataChange(dbCom.blueprintsPath, _saveBlueprintTileToModel);
+  void _listenToActiveBlueprintChange(String? blueprintID) {
+    if (blueprintID != null) {
+      unsubscribe();
+      databaseSubscription = dbCom.listenToActiveBlueprintChange(blueprintID,
+          uiCallback: notifyListeners);
+    } else {
+      print("LALALALALALALALA");
+    }
   }
 
   Future<void> initialize() async {
     await dbCom.initFirebase();
-    //TODO enable
-    //_listenToBlueprintChange();
+    _listenToActiveBlueprintChange(
+        dbCom.model.getActiveBlueprint()?.getBlueprintID());
+    //print(dbCom.model.getActiveBlueprint()?.getBlueprintID());
   }
 
-  void _saveBlueprintTileToModel(Map<String, dynamic> data) {
-    List<ColoredTile> newBlueprintTilesList = [];
-
-    data.forEach((key, value) {
-      if (value != null && key != null) {
-        Map<String, dynamic> tile = Map<String, dynamic>.from(value);
-        //The assumption here is that "value" is another map.
-        newBlueprintTilesList.add(ColoredTile.fromMap(key, tile));
-      }
-    });
-
-    //Update active blueprint in model
-    dbCom.model.getActiveBlueprint()?.setTiles(newBlueprintTilesList);
-  }
-
-  void createNewBlueprint() async {
-    String? blueprintID =
-        await dbCom._createNewDatabaseEntryUnderPath(dbCom.blueprintsPath);
-    if (blueprintID != null) {
-      Blueprint newBlueprint = Blueprint(blueprintID);
-      dbCom.model.addBlueprint(newBlueprint);
-
-      //Set this as the active one if we dont have an active blueprint
-      if (dbCom.model.getActiveBlueprint() == null) {
-        dbCom.model.setActiveBlueprint(newBlueprint);
-      }
+  //Change which blueprint is active and therefore also from which we are listening to changes.
+  void changeActiveBlueprint(String blueprintID) {
+    String? userID = dbCom.model.getCurrentUser()?.getUserID();
+    if (userID != null) {
+      dbCom.changeActiveBlueprint(userID, blueprintID);
+      _listenToActiveBlueprintChange(blueprintID);
     }
   }
 
+  void unsubscribe() {
+    databaseSubscription?.cancel();
+  }
+
 //Adds a tile to the active blueprint's database
-  void addTile(Color color, String geohash) async {
+  void addTileToActiveBlueprint(Color color, String geohash) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference ref = database.ref().child(dbCom.blueprintsPath);
+    //print("HERE");
 
     //reference blueprint ID.
     String? activeBlueprintID =
         dbCom.model.getActiveBlueprint()?.getBlueprintID();
+    //print("HERE2: $activeBlueprintID");
+    //print("HERE3: ${dbCom.model.getCurrentUser()?.getAvailableBlueprints()}");
+
+    if (activeBlueprintID != null)
+      print("The active blueprint ID: $activeBlueprintID");
 
     //Add tile to database if we have a valid active blueprint
     if (activeBlueprintID != null) {
       DatabaseReference activeBlueprintRef = ref.child(activeBlueprintID);
 
-      DatabaseReference newTileRef = activeBlueprintRef.child(geohash);
+      DatabaseReference newTileRef =
+          activeBlueprintRef.child("tiles").child(geohash);
       //print("newtile: " + newTileRef.path);
 
       await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
     }
+
+    //notifyListeners();
   }
 }
 
@@ -76,6 +80,7 @@ class BlueprintChangeNotifier extends ChangeNotifier {
 class MapChangeNotifier extends ChangeNotifier {
   DatabaseCommunicator dbCom;
   MapChangeNotifier(this.dbCom);
+  StreamSubscription<DatabaseEvent>? databaseSubscription;
 
   Future<void> initialize() async {
     await dbCom.initFirebase();
@@ -83,23 +88,12 @@ class MapChangeNotifier extends ChangeNotifier {
   }
 
   void _listenToTilesChange() {
-    dbCom.listenToDataChange(dbCom.tilesPath, _saveTilesToModel);
+    databaseSubscription =
+        dbCom.listenToMapTilesChange(uiCallback: notifyListeners);
   }
 
-  void _saveTilesToModel(Map<String, dynamic> data) {
-    List<ColoredTile> newTilesList = [];
-
-    data.forEach((key, value) {
-      if (value != null && key != null) {
-        Map<String, dynamic> tile = Map<String, dynamic>.from(value);
-        //The assumption here is that "value" is another map.
-        newTilesList.add(ColoredTile.fromMap(key, tile));
-      }
-    });
-
-    dbCom.model.setTiles(newTilesList);
-    //Notify everything that the database has changed.
-    notifyListeners();
+  void unsubscribe() {
+    databaseSubscription?.cancel();
   }
 
   //Uses transactions to change data that might get corrupted due to concurrent changes.
@@ -119,8 +113,7 @@ class MapChangeNotifier extends ChangeNotifier {
     }
   }
 
-  void removeAllTiles() {
-    dbCom._removeData(dbCom.tilesPath);
+    //notifyListeners();
   }
 }
 
@@ -135,14 +128,18 @@ class DatabaseCommunicator {
 
   final String tilesPath = "Tiles";
   final String usersPath = "Users";
+  final String groupsPath = "Groups";
   final String blueprintsPath = "Blueprints";
 
   bool _hasBeenInitialized = false;
 
+  final String _personalBlueprintName = "Personal Blueprint";
+
+  //TODO USE THIS.
+  //List<StreamSubscription<DatabaseEvent>> databaseSubscriptions = [];
+
   DatabaseCommunicator(this.model) {
     secureLocalStorage = FlutterSecureStorage();
-
-    //initFirebase();
   }
 
   Future<void> initFirebase() async {
@@ -162,86 +159,257 @@ class DatabaseCommunicator {
   //Important: A DatabaseEvent is fired every time data is changed at the specified database reference, including changes to children. To limit the size of your snapshots, attach only at the highest level needed for watching changes. For example, attaching a listener to the root of your database is not recommended.
   //PREFER USING THIS OVER GET BECAUSE ITS CHEAPER (IN MONEY IT DOESN'T COST AS MUCH)
   //This is called once when the listener is attached and then everytime it changes.
-  void listenToDataChange(
-      String databasePath, Function(Map<String, dynamic>) customCallback) {
+  StreamSubscription<DatabaseEvent> listenToDataChange(String databasePath,
+      Function(String?, Map<String, dynamic>, Function?) customCallback,
+      {String? key, Function? uiCallback}) {
     FirebaseDatabase database = FirebaseDatabase.instance;
     DatabaseReference databaseRef = database.ref(databasePath);
-    databaseRef.onValue.listen((DatabaseEvent event) {
+    if (key != null) databaseRef = databaseRef.child(key);
+
+    var subscription = databaseRef.onValue.listen((DatabaseEvent event) {
       //Do something when the data at this path changes.
       final data = event.snapshot.value;
 
-      //print(data.runtimeType.toString());
       if (data != null) {
         Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+
         //Do something with the data
-        customCallback(dataMap);
+        customCallback(key, dataMap, uiCallback);
       }
     });
+
+    return subscription;
   }
 
-  /* void _listenToTilesChange() {
-    _listenToDataChange(tilesPath, _saveTilesToModel);
+  //Generate events when anything in the user database changes, such as the number of blueprints changes
+  Future<StreamSubscription<DatabaseEvent>> listenToUserChanges(String userID,
+      {Function? uiCallback}) async {
+    StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
+        usersPath, _updateUserModel,
+        key: userID, uiCallback: uiCallback);
+    //databaseSubscriptions.add(newSub);
+    return newSub;
   }
 
-  void _saveTilesToModel(Map<String, dynamic> data) {
+  StreamSubscription<DatabaseEvent> listenToActiveBlueprintChange(
+      String blueprintID,
+      {Function? uiCallback}) {
+    StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
+        blueprintsPath, _updateActiveBlueprintModel,
+        key: blueprintID, uiCallback: uiCallback);
+    //databaseSubscriptions.add(newSub);
+    return newSub;
+  }
+
+  StreamSubscription<DatabaseEvent> listenToMapTilesChange(
+      {Function? uiCallback}) {
+    StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
+        tilesPath, _updateTilesModel,
+        uiCallback: uiCallback);
+    //databaseSubscriptions.add(newSub);
+    return newSub;
+  }
+
+// FUNCTIONS THAT POPULATE THE MODEL WITH DATA ----------------------------------------------------
+  Future<void> _initUserModel(String userID) async {
+    User currentUser = User(userID);
+    model.setCurrentUser(currentUser);
+    _saveSecureStringLocally("uID", userID);
+
+    DatabaseReference ref =
+        FirebaseDatabase.instance.ref(usersPath + "/" + userID);
+    // Get the data once
+    DatabaseEvent event = await ref.once();
+    final data = event.snapshot.value;
+    if (data != null) {
+      Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+      //Do something with the data
+      await _updateUserModel(userID, dataMap, () {});
+    }
+  }
+
+  Future<void> _updateUserModel(String? userID, Map<String, dynamic> data,
+      Function? onModelUpdateCallback) async {
+    //print("What is this:" + data.keys.toString());
+    
+    if (data != null) {
+      Map<String, dynamic> dataMap = Map<String, dynamic>.from(data);
+      print("USERDATAMAP $dataMap");
+      //GROUPS
+      Map<String, dynamic> groups = {};
+      if (dataMap["groups"] != null && dataMap["groups"] != false) {
+        groups = Map<String, dynamic>.from(dataMap["groups"]);
+        print("GROUPS $groups");
+      }
+
+      //SAVING TO MODEL
+      //Look in other places of the database to gather data and save to model.
+      await _updateUserGroups(userID, groups, onModelUpdateCallback);
+      await _updateUserBlueprintsListModel(
+          userID, groups, onModelUpdateCallback);
+
+      if (dataMap["activeBlueprintID"] != null &&
+          dataMap["activeBlueprintID"] != false) {
+        print("TJAAAAAA ${model.getCurrentUser()?.getAvailableBlueprints()}");
+        model.setActiveBlueprint(dataMap["activeBlueprintID"]);
+      } else if (userID != null) {
+        //changeActiveBlueprint(userID, _personalBlueprintName);
+        model.setActiveBlueprint(userID);
+      }
+    }
+  }
+
+//Updates the model of the active blueprint
+  Future<void> _updateActiveBlueprintModel(
+      String? _,
+      Map<String, dynamic> blueprintData,
+      Function? onModelUpdateCallback) async {
+    String? blueprintID = model.getActiveBlueprint()?.getBlueprintID();
+    print("BLUEPRINT DATA: $blueprintData");
+    if (blueprintID != null) {
+      //print("The data: " + data.toString());
+      //Add the blueprint to the model
+      Blueprint blueprint = Blueprint.fromMap(blueprintID, blueprintData);
+      print("DA FOOKIN BLUEPRINT ${blueprint.getBlueprintID()}");
+
+      //create new list with altered entry for the active blueprint.
+      List<Blueprint>? availableBlueprints =
+          model.getCurrentUser()?.getAvailableBlueprints();
+      if (availableBlueprints != null) {
+        availableBlueprints
+            .removeWhere((b) => b.getBlueprintID() == blueprintID);
+        availableBlueprints.add(blueprint);
+
+        print("TILESS YO ${blueprint.getTiles()}");
+
+        //Reset active blueprint to be this new version.
+        model.setUserBlueprints(availableBlueprints);
+
+        if (onModelUpdateCallback != null) onModelUpdateCallback();
+      } else {
+        print("ERROR: There is no user");
+      }
+    }
+    //print(data.runtimeType.toString());
+  }
+
+  Future<void> _updateUserBlueprintsListModel(String? userID,
+      Map<String, dynamic> groups, Function? onModelUpdateCallback) async {
+    final ref = FirebaseDatabase.instance.ref().child(blueprintsPath);
+
+    //BLUEPRINTS
+    //The userID is NOT a group however it is a blueprint, so add it here.
+    List<String> groupIDs = groups.keys.toList();
+    //List<String> blueprintIDs = List.from(groupIDs);
+    if (userID != null) groupIDs.add(userID);
+
+    //print("GROUPIDS $groupIDs");
+
+    List<Blueprint> newBlueprintsList = [];
+
+    for (var iD in groupIDs) {
+      //print(iD.toString());
+      if (model.getActiveBlueprint() != null &&
+          iD == model.getActiveBlueprint()?.getBlueprintID()) {
+        //If the ID is that of the active blueprint we don't want to remove all its data, just pass it along to new list
+        newBlueprintsList.add(model.getActiveBlueprint()!);
+      } else {
+        DatabaseReference blueprintRef = ref.child(iD);
+        DatabaseReference nameRef = blueprintRef.child("blueprintName");
+        var snapshot = await nameRef.get();
+        print("Blueprint with ID: $iD, has a value of ${snapshot.value}");
+        if (snapshot.exists) {
+          //Do something when the data at this path changes.
+          final name = snapshot.value;
+          print("This is the data yoooooo: " + name.toString());
+          if (name != null && name != false) {
+            //Add the blueprint to the model
+            Blueprint blueprint = Blueprint(iD, name.toString());
+            print("DA FOOKIN BLUEPRINT ${blueprint.getBlueprintID()}");
+            newBlueprintsList.add(blueprint);
+          }
+        } else {
+          print('No data available.');
+        }
+      }
+    }
+
+    //Set users blueprint list to these blueprints
+    model.setUserBlueprints(newBlueprintsList);
+
+    print("TJOOOOO ${newBlueprintsList}");
+    //print(data.runtimeType.toString());
+    if (onModelUpdateCallback != null) onModelUpdateCallback();
+  }
+
+
+  Future<void> _updateUserGroups(String? userID, Map<String, dynamic> groups,
+      Function? onModelUpdateCallback) async {
+    final ref = FirebaseDatabase.instance.ref().child(groupsPath);
+
+    List<String> groupIDs = groups.keys.toList();
+    List<Group> newGroupsList = [];
+
+    for (var iD in groupIDs) {
+      //print(iD.toString());
+      DatabaseReference groupRef = ref.child(iD);
+      var snapshot = await groupRef.get();
+
+      if (snapshot.exists) {
+        //Do something when the data at this path changes.
+        final data = snapshot.value;
+        if (data != null) {
+          //print("The data: " + data.toString());
+
+          Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
+
+          //Add the blueprint to the model
+          Group group = Group.fromMap(iD, dataMap);
+          newGroupsList.add(group);
+        }
+      } else {
+        print('No data available.');
+      }
+    }
+
+    //Set users blueprint list to these blueprints
+    model.setUserGroups(newGroupsList);
+
+    //print(data.runtimeType.toString());
+    if (onModelUpdateCallback != null) onModelUpdateCallback();
+  }
+
+  void _updateTilesModel(
+      String? _, Map<String, dynamic> data, Function? onModelUpdateCallback) {
     List<ColoredTile> newTilesList = [];
-    //print("AAAAAAAAAAAA");
-
-    //print("Found data in database" + data.toString());
 
     data.forEach((key, value) {
       if (value != null && key != null) {
-        //print("val: " + value.runtimeType.toString());
         Map<String, dynamic> tile = Map<String, dynamic>.from(value);
         //The assumption here is that "value" is another map.
         newTilesList.add(ColoredTile.fromMap(key, tile));
-        //print(newTilesList);
-
-        //print("tile gathered" + ColoredTile.fromMap(key, tile).toString());
       }
     });
 
     model.setTiles(newTilesList);
-  } */
-
-/*
-//WARNING DONT USE THIS, UNLESS ABSOLUTELY NECESSARY.
-  void getData(String databasePath) async {
-    FirebaseDatabase database = FirebaseDatabase.instance;
-    DatabaseReference ref = database.ref().child(databasePath);
-
-    final snapshot = await ref.get();
-    if (snapshot.exists) {
-      print(snapshot.value);
-    } else {
-      print('No data available.');
-    }
+    //Notify the ui that the database has changed.
+    print("THE CALLBACK $onModelUpdateCallback");
+    if (onModelUpdateCallback != null) onModelUpdateCallback();
   }
 
-  //For data that changes infrequently, like never, and needs to be fetched once use this
-  void getDataOnce(String databasePath) async {
-    FirebaseDatabase database = FirebaseDatabase.instance;
-    DatabaseReference ref = database.ref().child(databasePath);
-
-    final event = await ref.once(DatabaseEventType.value);
-    //final username = event.snapshot.value?.username ?? 'Anonymous';
-    //Read the data from the event.
-  }
-*/
-
-//SAFE STORAGE FUNCTIONS ----------------------------------------------
-  void _saveUserIDLocally(String? userID) async {
+//SAFE STORAGE FUNCTIONS --------------------------------------------------------------------------
+  void _saveSecureStringLocally(String key, String? userID) async {
     // Write value
     if (userID != null) {
-      await secureLocalStorage.write(key: "uID", value: userID);
+      await secureLocalStorage.write(key: key, value: userID);
     } else {
       print("Could not save since returned key is null");
     }
   }
 
-  Future<String?> _getLocalUserID() async {
+  Future<String?> _getLocalSecureString(String key) async {
     // Read value
-    String? value = await secureLocalStorage.read(key: "uID");
+    String? value = await secureLocalStorage.read(key: key);
 
     return value;
   }
@@ -258,15 +426,192 @@ class DatabaseCommunicator {
 
 //Initializes a new user if needed.
   Future<void> _initUser() async {
-    _getAndroidOptions();
-    String? userID = await _getLocalUserID();
-    if (userID == null) {
-      String? generatedKey = await _createNewUser();
-      _saveUserIDLocally(generatedKey);
-    } else {
-      //We have the ID locally, make sure it exists in the database as well?
+    //TODO REMOVE
+    /* leaveAllGroups();
+    removeAllGroups();
+    removeAllBlueprints();
+    clearLocalSafeStorage();
+    removeAllUsers(); */
+    //----------
 
+    _getAndroidOptions();
+    String? userID = await _getLocalSecureString("uID");
+
+    if (userID == null) {
+      //UserID not found locally, create new user on database and get new user ID
+      userID = await _createNewUser();
+      if (userID != null) {
+        //Retrieve saved data on database (which will be empty) and populate model.
+        await _initUserModel(userID);
+      }
+    } else {
+      //We have the ID locally, make sure userID exists in the database as well
+      DatabaseReference ref =
+          FirebaseDatabase.instance.ref(usersPath + "/" + userID);
+      DatabaseEvent event = await ref.once();
+      final theUser = event.snapshot.value;
+      if (theUser != null) {
+        //the user exists BOTH locally and in the database so just initialize the user.
+        await _initUserModel(userID);
+      } else {
+        //The user has been deleted on the database for some reason, perhaps an destructive update.
+        print(
+            "User not found on database perhaps due to some destructive update, creating new user");
+
+        //delete potential old leftover personal blueprint. IMPORTANT! This cannot be after the next row.
+        String oldLostUserID = userID.toString();
+        _removeData("$blueprintsPath/$oldLostUserID");
+
+        userID = await _createNewUser();
+        if (userID != null) {
+          await _initUserModel(userID);
+        }
+      }
+
+      //Retrieve saved data on database and populate model.
+
+      /* //Try to retrieve old active blueprint
+      String? blueprintID = await _getLocalSecureString("activeBlueprintID");
+      String? blueprintName =
+          await _getLocalSecureString("activeBlueprintName");
+      if (blueprintID != null && blueprintName != null) {
+        //We found old active blueprint, try to retrieve it
+        print(blueprintID + " " + blueprintName);
+        changeActiveBlueprint(blueprintID, blueprintName);
+      } else {
+        //We did not find old active blueprint set to personal
+        changeActiveBlueprint(userID, _personalBlueprintName);
+      } */
     }
+
+    // listen to changes in the current user's subdatabase
+    //Needed to set the listener here and use initUserModel so we could wait on it,
+    //Although they do the same thing ones triggered since the listener is triggered directly.
+
+    if (userID != null) {
+      await listenToUserChanges(userID);
+    }
+  }
+
+  Future<void> _initPersonalBlueprint(String userID) async {
+    //Blueprint newBlueprint = Blueprint(userID, _personalBlueprintName);
+    print("INIT PERSONAL");
+
+    await _createNewBlueprintOnDatabase(userID, _personalBlueprintName);
+
+    //Set this as the active one as we dont have any active blueprint in the beginning
+    changeActiveBlueprint(userID, userID);
+  }
+
+  void changeActiveBlueprint(String userID, String blueprintID) {
+    print("CHANGING ACTIVE BLUEPRINT");
+
+    _pushEntryWithExistingKey(usersPath, userID,
+        postData: {"activeBlueprintID": blueprintID});
+  }
+
+  Future<void> _createNewBlueprintOnDatabase(String key, String name) async {
+    //FirebaseDatabase database = FirebaseDatabase.instance;
+    //DatabaseReference ref = database.ref().child(blueprintsPath);
+    print("CREATING NEW");
+    _pushEntryWithExistingKey(blueprintsPath, key,
+        postData: {"blueprintName": name, "tiles": false});
+  }
+
+//Create a new group on the database
+  void addGroup(String groupName, String description) async {
+    Map<String, dynamic> newGroupData = {
+      "name": groupName,
+      "description": description,
+      "membercount": 0,
+    };
+
+    String? gID = await _pushEntryWithUniqeGeneratedKey(groupsPath,
+        postData: newGroupData);
+
+    //Also create a matching blueprint for the group
+    if (gID != null) {
+      _createNewBlueprintOnDatabase(gID, groupName);
+    }
+  }
+
+  void joinGroup(String groupID) async {
+    String? currentUserID = model.getCurrentUser()?.getUserID();
+    if (currentUserID != null) {
+      //Find out if group exists
+      DatabaseReference potentialGroupRef =
+          FirebaseDatabase.instance.ref(groupsPath + "/" + groupID);
+      DatabaseEvent groupExistsEvent = await potentialGroupRef.once();
+      final theGroup = groupExistsEvent.snapshot.value;
+
+      //Only join the group if it actually exists
+      if (theGroup != null) {
+        //Find if we are a part of the group
+        DatabaseReference usersPotentialGroupIDRef = FirebaseDatabase.instance
+            .ref("$usersPath/$currentUserID/groups/$groupID");
+        DatabaseEvent userIsMemberEvent = await usersPotentialGroupIDRef.once();
+        final theUsersGroupID = userIsMemberEvent.snapshot.value;
+
+        //Only join the group if we are not already a part of it.
+        if (theUsersGroupID == null) {
+          Map<String, Object?> updates = {};
+          updates["$groupsPath/$groupID/membercount"] =
+              ServerValue.increment(1);
+          updates["$usersPath/$currentUserID/groups/$groupID"] = {
+            "Joined": true
+          };
+
+          FirebaseDatabase.instance.ref().update(updates);
+
+          /* _pushEntryWithExistingKey(
+            "$usersPath/$currentUserID/groups", "",
+            postData: {groupID: true}); */
+        }
+      } else {
+        print("Group doesn't exist");
+      }
+
+      //print(usersPath + "/" + currentUserID + "/groups");
+    }
+  }
+
+  void leaveGroup(String groupID) async {
+    String? uID = model.getCurrentUser()?.getUserID();
+    if (uID != null) {
+      //Find if we are a part of the group
+      DatabaseReference usersPotentialGroupIDRef =
+          FirebaseDatabase.instance.ref("$usersPath/$uID/groups/$groupID");
+      DatabaseEvent userIsMemberEvent = await usersPotentialGroupIDRef.once();
+      final theUsersGroupID = userIsMemberEvent.snapshot.value;
+
+      //Only leave the group if we are already a part of it.
+      if (theUsersGroupID != null) {
+        Map<String, Object?> updates = {};
+        updates["$groupsPath/$groupID/membercount"] = ServerValue.increment(-1);
+        FirebaseDatabase.instance.ref().update(updates);
+
+        _removeData("$usersPath/$uID/groups/$groupID");
+      }
+    }
+  }
+
+  void leaveAllGroups() {
+    String? uID = model.getCurrentUser()?.getUserID();
+    if (uID != null) {
+      _removeData(usersPath + "/" + uID + "/groups");
+    }
+  }
+
+  void removeAllGroups() {
+    _removeData(groupsPath);
+  }
+
+  void removeAllBlueprints() {
+    _removeData(blueprintsPath);
+  }
+
+  void removeAllUsers() {
+    _removeData(usersPath);
   }
 
   Future<String?> _createNewUser() async {
@@ -279,34 +624,35 @@ class DatabaseCommunicator {
     // Get a key for a new user.
     final newPostKey = ref.push().key;
 
-    final postData = {
-      'groups': "",
-    };
+    final postData = {"groups": null};
+    final Map<String, dynamic> updates = {};
+    updates['groups'] = false;
+    updates['activeBlueprintID'] = false;
 
-    // Write the new post's data simultaneously in the posts list and the
-    // user's post list.
-    final Map<String, Map> updates = {};
-    updates['/Users/$newPostKey'] = postData;
-    //updates['/user-posts/$uid/$newPostKey'] = postData;
-    //print("Här");
+    //Also create a matching blueprint for the group
+    if (newPostKey != null) {
+      DatabaseReference newEntryRef = ref.child(newPostKey);
 
-    FirebaseDatabase.instance.ref().update(updates).then((_) {
-      // Data saved successfully!
-      print("Data saved Successfully");
-    }).catchError((error) {
-      // The write failed...
-      print("Data write failed");
-    });
+      await newEntryRef.update(updates).then((_) {
+        // Data saved successfully!
+        print("Data saved Successfully");
+      }).catchError((error) {
+        // The write failed...
+        print("Data write failed");
+      });
+
+      await _initPersonalBlueprint(newPostKey);
+    }
 
     //return FirebaseDatabase.instance.ref().update(updates);
     return newPostKey;
   }
 
   //Returns the key
-  Future<String?> _createNewDatabaseEntryUnderPath(String databasePath,
+  Future<String?> _pushEntryWithUniqeGeneratedKey(String databasePath,
       {Map<String, dynamic> postData = const {}}) async {
     FirebaseDatabase database = FirebaseDatabase.instance;
-    DatabaseReference ref = database.ref().child(usersPath);
+    DatabaseReference ref = database.ref().child(databasePath);
 
     //generate a new ID.
     final newPostKey = ref.push().key;
@@ -326,6 +672,27 @@ class DatabaseCommunicator {
     });
 
     return newPostKey;
+  }
+
+  Future<void> _pushEntryWithExistingKey(String databasePath, String key,
+      {Map<String, dynamic> postData = const {}}) async {
+    FirebaseDatabase database = FirebaseDatabase.instance;
+    DatabaseReference ref = database.ref().child(databasePath);
+    DatabaseReference newEntryRef = ref.child(key);
+    // Write the new post's data simultaneously in the posts list and the
+    // user's post list.
+    //final Map<String, Map> updates = {};
+    //updates['$key'] = postData;
+    //updates['$newPostKey'] = postData;
+    //print(databasePath + "/" + key);
+
+    await newEntryRef.update(postData).then((_) {
+      // Data saved successfully!
+      print("Data saved Successfully");
+    }).catchError((error) {
+      // The write failed...
+      print("Data write failed");
+    });
   }
 
 //Just use these to see that we can post anything.
