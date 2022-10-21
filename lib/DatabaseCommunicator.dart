@@ -364,11 +364,11 @@ class DatabaseCommunicator {
       if (dataMap["activeBlueprintID"] != null &&
           dataMap["activeBlueprintID"] != false) {
         model.setActiveBlueprint(dataMap["activeBlueprintID"]);
-        print("Vi är häraeller ${dataMap["activeBlueprintID"]}");
+        //print("Vi är häraeller ${dataMap["activeBlueprintID"]}");
       } else if (userID != null) {
         //changeActiveBlueprint(userID, _personalBlueprintName);
         model.setActiveBlueprint(userID);
-        print("Vi är här");
+        //print("Vi är här");
       }
     }
   }
@@ -391,11 +391,11 @@ class DatabaseCommunicator {
       if (dataMap["activeBlueprintID"] != null &&
           dataMap["activeBlueprintID"] != false) {
         model.setActiveBlueprint(dataMap["activeBlueprintID"]);
-        print("Vi är häraeller ${dataMap["activeBlueprintID"]}");
+        //print("Vi är häraeller ${dataMap["activeBlueprintID"]}");
       } else if (userID != null) {
         //changeActiveBlueprint(userID, _personalBlueprintName);
         model.setActiveBlueprint(userID);
-        print("Vi är här");
+        // print("Vi är här");
       }
 
       //SAVING TO MODEL
@@ -422,23 +422,20 @@ class DatabaseCommunicator {
       //create new list with altered entry for the active blueprint.
       List<Blueprint>? availableBlueprints =
           model.getCurrentUser()?.getAvailableBlueprints();
-      print(
-          "TJAAAAAA1111 ${model.getCurrentUser()?.getAvailableBlueprints().map((e) => "${e.getName()}, ")}");
+      //print("TJAAAAAA1111 ${model.getCurrentUser()?.getAvailableBlueprints().map((e) => "${e.getName()}, ")}");
 
       if (availableBlueprints != null) {
         availableBlueprints
             .removeWhere((b) => b.getBlueprintID() == blueprintID);
 
-        print(
-            "TJAAAAAA2222 ${availableBlueprints.map((e) => "${e.getName()}, ")}");
+        //print("TJAAAAAA2222 ${availableBlueprints.map((e) => "${e.getName()}, ")}");
         availableBlueprints.add(blueprint);
 
         //print("TILESS YO ${blueprint.getTiles()}");
 
         //Reset active blueprint to be this new version.
         model.setUserBlueprints(availableBlueprints);
-        print(
-            "TJAAAAAA ${model.getCurrentUser()?.getAvailableBlueprints().map((e) => "${e.getName()}, ")}");
+        //print("TJAAAAAA ${model.getCurrentUser()?.getAvailableBlueprints().map((e) => "${e.getName()}, ")}");
 
         if (onModelUpdateCallback != null) onModelUpdateCallback();
       } else {
@@ -511,8 +508,7 @@ class DatabaseCommunicator {
 
     //Set users blueprint list to these blueprints
     model.setUserBlueprints(newBlueprintsList);
-    print(
-        "TJOOOO ${model.getCurrentUser()?.getAvailableBlueprints().map((e) => "${e.getName()}, ")}");
+    //print("TJOOOO ${model.getCurrentUser()?.getAvailableBlueprints().map((e) => "${e.getName()}, ")}");
 
     //print("TJOOOOO ${newBlueprintsList}");
     //print(data.runtimeType.toString());
