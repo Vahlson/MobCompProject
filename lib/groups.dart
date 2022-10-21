@@ -1,3 +1,4 @@
+import 'package:artmap/myGroupPage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,10 +19,11 @@ class JoinGroup extends StatefulWidget{
   @override
   State<JoinGroup> createState() => _JoinGroupState();
 }
-TextEditingController textController = TextEditingController();
-String groupID = "";
+
 
 class _JoinGroupState extends State<JoinGroup> {
+  TextEditingController joinGroupTxtCtrl = TextEditingController();
+  String groupID = "";
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -47,10 +49,10 @@ class _JoinGroupState extends State<JoinGroup> {
                   style: const TextStyle(fontSize: 16),
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    labelText: 'Group code',
-                    hintText: 'Enter your group code',
+                    labelText: 'Join Group',
+                    hintText: 'Enter the group code',
                   ),
-                  controller: textController,
+                  controller: joinGroupTxtCtrl,
                 ),
               ),
             ),
@@ -58,7 +60,7 @@ class _JoinGroupState extends State<JoinGroup> {
                 onPressed: (){
                   setState(() {
                     //Todo: Add join group action
-                    groupID = textController.text;
+                    groupID = joinGroupTxtCtrl.text;
                   });
                 },
                 child: const Text("Join")
@@ -67,6 +69,59 @@ class _JoinGroupState extends State<JoinGroup> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class CreateGroup extends StatefulWidget{
+  const CreateGroup({super.key});
+  @override
+  State<CreateGroup> createState() => _CreateGroupState();
+}
+
+
+class _CreateGroupState extends State<CreateGroup> {
+  TextEditingController grpNameTxtCtrl = TextEditingController();
+  TextEditingController dscrpTxtCtrl = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create new group')
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            FadeInImage.assetNetwork(placeholder: 'https://freeiconshop.com/wp-content/uploads/edd/image-outline-filled.png',
+                image: ''),
+            TextFormField(
+              controller: grpNameTxtCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Group Name:',
+                icon: Icon(Icons.groups),
+              ),
+            ),
+            TextFormField(
+              controller: dscrpTxtCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                icon: Icon(Icons.description),
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        //TODO Submit to database
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyGroupPage()),
+        );
+      },
+      backgroundColor: Colors.blue,
+      child: const Icon(Icons.check),
+    ),
     );
   }
 }
@@ -98,6 +153,7 @@ class GroupCard extends StatelessWidget {
               ),
               children: [
                 Padding(
+                  //Description
                   padding: const EdgeInsets.fromLTRB(8,0,8,0),
                   child: Text(
                     'Greyhound divisively hello coldly wonderfully marginally far upon excluding.Greyhound divisively hello coldly wonderfully marginally far upon excluding.Greyhound divisively hello coldly wonderfully marginally far upon excluding.',

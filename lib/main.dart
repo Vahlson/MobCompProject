@@ -7,7 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import 'model/Model.dart';
 import 'customIcons.dart';
-
+import 'myGroupPage.dart';
 import 'map.dart';
 
 void main() {
@@ -241,7 +241,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       onPressed: (){
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
-                            builder: (context) => const MyGroupPage(title: "group"),
+                            builder: (context) => const MyGroupPage(),
                           ),
                         );
                       },
