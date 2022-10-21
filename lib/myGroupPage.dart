@@ -104,7 +104,8 @@ class _MyGroupPageState extends State<MyGroupPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text("My groups"),
+            title: const Text("My groups", style: TextStyle(color: Colors.black),),
+            backgroundColor: Colors.white,
           ),
           body: ListView.builder(
             itemCount: availableGroups.length + 1,

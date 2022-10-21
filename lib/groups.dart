@@ -60,6 +60,9 @@ class _JoinGroupState extends State<JoinGroup> {
               ),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black
+              ),
                 onPressed: () {
                   setState(() {
                     groupID = joinGroupTxtCtrl.text;
@@ -92,7 +95,10 @@ class _CreateGroupState extends State<CreateGroup> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create new group')),
+      appBar: AppBar(title: const Text('Create new group', style: TextStyle(color: Colors.black)), backgroundColor: Colors.white, iconTheme: const IconThemeData(
+        color: Colors.black, //change your color here
+      ),
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -140,7 +146,7 @@ class _CreateGroupState extends State<CreateGroup> {
           Provider.of<GroupsChangeNotifier>(context, listen: false).createGroup(grpNameTxtCtrl.text, dscrpTxtCtrl.text, urlTxtCtrl.text);
           Navigator.pop(context);
         },
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.black,
         child: const Icon(Icons.check),
       ),
     );
@@ -204,9 +210,6 @@ class GroupCard extends StatelessWidget {
                             color: Colors.black.withOpacity(0.4),
                             fontSize: 11)),
                     OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                            //minimumSize: const Size(3,40),
-                            ),
                         onPressed: () {
                           // Perform some action
                           Provider.of<GroupsChangeNotifier>(context,
@@ -217,7 +220,7 @@ class GroupCard extends StatelessWidget {
                           fit: BoxFit.fitHeight,
                           child: Text(
                             "Leave",
-                            style: TextStyle(letterSpacing: 1, fontSize: 16),
+                            style: TextStyle(letterSpacing: 1, fontSize: 16, color: Colors.black),
                           ),
                         )),
                   ],

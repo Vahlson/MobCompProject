@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'blot',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.deepPurple,
       ),
       home: const MyHomePage(),
     );
@@ -412,6 +412,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: DropdownButtonFormField(
                                 decoration: const InputDecoration(
                                   border: OutlineInputBorder(),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.black)
+                                  ),
                                   labelText: 'Active blueprint',
                                 ),
                                 items: availableBlueprintsNotifier
@@ -437,6 +440,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 }),
                           ),
                           CheckboxListTile(
+                            activeColor: Colors.black,
                               title: const Text("Show blueprint"),
                               value: activeBlueprintChangeNotifier
                                   .shouldShowBlueprint(),
@@ -497,10 +501,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           .changeActiveBlueprint(value!);
                     }),
               )
-            : const Text("Map"),
+            : const Text("Map", style: TextStyle(color: Colors.black)),
         actions: [
           IconButton(
-              icon: const Icon(Icons.my_location),
+              icon: const Icon(Icons.my_location, color: Colors.black),
               onPressed: () {
                 geomap.centerMapOnUser();
               }),
@@ -511,7 +515,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ? CustomIcons.humidity_high
                     : ((geomap.selectedOpacity == 0.5)
                         ? CustomIcons.humidity_mid
-                        : CustomIcons.humidity_low),
+                        : CustomIcons.humidity_low), color: Colors.black,
               ),
               onPressed: () {
                 setState(() {
@@ -525,13 +529,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               }),
         ],
-        backgroundColor:
-            Provider.of<ActiveBlueprintChangeNotifier>(context, listen: false)
-                    .dbCom
-                    .model
-                    .getIsBluePrintEditing()
-                ? Colors.lightBlue
-                : Colors.black,
+        backgroundColor: Colors.white,
       ),
       body: Center(
         child: Container(
