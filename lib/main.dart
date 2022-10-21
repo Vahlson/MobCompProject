@@ -22,6 +22,9 @@ void main() {
       ChangeNotifierProvider(
         create: (context) => BlueprintChangeNotifier(dbCom),
       ),
+      ChangeNotifierProvider(
+        create: (context) => GroupsChangeNotifier(dbCom),
+      ),
     ],
     child: const MyApp(),
   ));
@@ -115,7 +118,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 selectedColor,
                 _geoHasher.encode(
                     tap.tapPosition.longitude, tap.tapPosition.latitude,
-                    precision: 8), penMode);
+                    precision: 8),
+                penMode);
           } else {
             Provider.of<BlueprintChangeNotifier>(context, listen: false)
                 .addTileToActiveBlueprint(
@@ -159,6 +163,8 @@ class _MyHomePageState extends State<MyHomePage> {
   void initDatabase() async {
     await Provider.of<MapChangeNotifier>(context, listen: false).initialize();
     await Provider.of<BlueprintChangeNotifier>(context, listen: false)
+        .initialize();
+    await Provider.of<GroupsChangeNotifier>(context, listen: false)
         .initialize();
   }
 
@@ -227,44 +233,46 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (BuildContext bc) {
           return Wrap(
-            children: [Container(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  //const Text("Navigate to"),
-                  TextButton.icon(
-                      onPressed: (){
-                        Navigator.pop(context);
-                      },
-                      /*style: TextButton.styleFrom(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    //const Text("Navigate to"),
+                    TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        /*style: TextButton.styleFrom(
                         foregroundColor: Colors.black,
                       ),*/
-                      icon: const Icon(Icons.map),
-                      label: Row(children: const [Text("Map")])),
-                  TextButton.icon(
-                      onPressed: (){
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const MyGroupPage(),
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.black,
-                      ),
-                      icon: const Icon(Icons.group),
-                      label: Row(children: const [Text("Groups")])),
-                  TextButton.icon(
-                      onPressed: (){},
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.black,
-                      ),
-                      icon: const Icon(Icons.architecture),
-                      label: Row(children: const [Text("Edit Blueprints")])),
-                ],
-              ),
-            )],
+                        icon: const Icon(Icons.map),
+                        label: Row(children: const [Text("Map")])),
+                    TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => const MyGroupPage(),
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.black,
+                        ),
+                        icon: const Icon(Icons.group),
+                        label: Row(children: const [Text("Groups")])),
+                    TextButton.icon(
+                        onPressed: () {},
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.black,
+                        ),
+                        icon: const Icon(Icons.architecture),
+                        label: Row(children: const [Text("Edit Blueprints")])),
+                  ],
+                ),
+              )
+            ],
           );
         });
   }
@@ -276,8 +284,14 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text("map"),
         actions: [
           IconButton(
-            //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
-              icon: Icon((geomap.selectedOpacity == 1) ? CustomIcons.humidity_high : ((geomap.selectedOpacity == 0.5) ? CustomIcons.humidity_mid : CustomIcons.humidity_low),),
+              //CHANGE TO THE CORRECT ICONS (Humidity high & low), NOT WATER DROPS
+              icon: Icon(
+                (geomap.selectedOpacity == 1)
+                    ? CustomIcons.humidity_high
+                    : ((geomap.selectedOpacity == 0.5)
+                        ? CustomIcons.humidity_mid
+                        : CustomIcons.humidity_low),
+              ),
               onPressed: () {
                 setState(() {
                   if (geomap.selectedOpacity == 1) {
@@ -316,27 +330,29 @@ class _MyHomePageState extends State<MyHomePage> {
         shape: const CircularNotchedRectangle(),
         child: Row(
           children: [
-            IconButton(icon: const Icon(Icons.menu), onPressed: () {
-              _showNavMenu(context);
-            }),
+            IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  _showNavMenu(context);
+                }),
             const Spacer(),
             IconButton(
                 icon: Center(
                   child: Stack(
-                      children: <Widget>[
-                        const Center(child: Icon(CustomIcons.eraser, size: 18)),
-                        Center(
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 400),
-                            height: penMode ? 0 : 36,
-                            width: penMode ? 0 : 36,
-                            decoration: const BoxDecoration(
-                              color: Colors.black26,
-                              shape: BoxShape.circle,
-                            ),
+                    children: <Widget>[
+                      const Center(child: Icon(CustomIcons.eraser, size: 18)),
+                      Center(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 400),
+                          height: penMode ? 0 : 36,
+                          width: penMode ? 0 : 36,
+                          decoration: const BoxDecoration(
+                            color: Colors.black26,
+                            shape: BoxShape.circle,
                           ),
-                        )
-                      ],
+                        ),
+                      )
+                    ],
                   ),
                 ),
                 onPressed: () {
@@ -347,7 +363,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   setState(() {
                     penMode = !penMode;
                   });
-            }),
+                }),
             IconButton(icon: const Icon(Icons.architecture), onPressed: () {}),
           ],
         ),
@@ -359,7 +375,7 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         child: const Icon(Icons.palette),
       ),
-    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

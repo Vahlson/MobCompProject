@@ -106,14 +106,54 @@ class MapChangeNotifier extends ChangeNotifier {
     //print("newtile: " + newTileRef.path);
 
     //Check if user wants to color or clear tile
-    if(penMode){
+    if (penMode) {
       await newTileRef.set({"r": color.red, "g": color.green, "b": color.blue});
     } else {
       await newTileRef.remove();
     }
   }
 
-    //notifyListeners();
+  //notifyListeners();
+}
+
+class GroupsChangeNotifier extends ChangeNotifier {
+  DatabaseCommunicator dbCom;
+  GroupsChangeNotifier(this.dbCom);
+  StreamSubscription<DatabaseEvent>? databaseSubscription;
+
+  Future<void> initialize() async {
+    await dbCom.initFirebase();
+    _listenToTilesChange();
+  }
+
+  void _listenToTilesChange() {
+    String? userID = dbCom.model.getCurrentUser()?.getUserID();
+    if (userID != null) {
+      databaseSubscription =
+          dbCom.listenToUserGroupsChange(userID, uiCallback: notifyListeners);
+    }
+  }
+
+  void unsubscribe() {
+    databaseSubscription?.cancel();
+  }
+
+  //Uses transactions to change data that might get corrupted due to concurrent changes.
+  //SUCH AS: editing a blot on the map.
+  //It seems that a transaction can both get and post data in one go which should be CHEAPER $$$$$$ and also handles concurrency issues.
+  void createGroup(String groupName, String groupDescription) async {
+    dbCom.addGroup(groupName, groupDescription);
+  }
+
+  void joinGroup(String groupID) async {
+    dbCom.joinGroup(groupID);
+  }
+
+  void leaveGroup(String groupID) async {
+    dbCom.leaveGroup(groupID);
+  }
+
+  //notifyListeners();
 }
 
 //https://firebase.google.com/docs/flutter/setup?platform=android
@@ -169,11 +209,14 @@ class DatabaseCommunicator {
       //Do something when the data at this path changes.
       final data = event.snapshot.value;
 
-      if (data != null) {
+      if (data != null && data != false) {
         Map<String, dynamic> dataMap = Map<String, dynamic>.from(data as Map);
 
         //Do something with the data
         customCallback(key, dataMap, uiCallback);
+      } else if (uiCallback != null) {
+        //So the data is now null or false meaning, EMPTY, still update the UI.
+        uiCallback();
       }
     });
 
@@ -186,6 +229,15 @@ class DatabaseCommunicator {
     StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
         usersPath, _updateUserModel,
         key: userID, uiCallback: uiCallback);
+    //databaseSubscriptions.add(newSub);
+    return newSub;
+  }
+
+  StreamSubscription<DatabaseEvent> listenToUserGroupsChange(String userID,
+      {Function? uiCallback}) {
+    StreamSubscription<DatabaseEvent> newSub = listenToDataChange(
+        usersPath, _updateUserGroups,
+        key: "$userID/groups", uiCallback: uiCallback);
     //databaseSubscriptions.add(newSub);
     return newSub;
   }
@@ -230,7 +282,7 @@ class DatabaseCommunicator {
   Future<void> _updateUserModel(String? userID, Map<String, dynamic> data,
       Function? onModelUpdateCallback) async {
     //print("What is this:" + data.keys.toString());
-    
+
     if (data != null) {
       Map<String, dynamic> dataMap = Map<String, dynamic>.from(data);
       print("USERDATAMAP $dataMap");
@@ -340,7 +392,6 @@ class DatabaseCommunicator {
     //print(data.runtimeType.toString());
     if (onModelUpdateCallback != null) onModelUpdateCallback();
   }
-
 
   Future<void> _updateUserGroups(String? userID, Map<String, dynamic> groups,
       Function? onModelUpdateCallback) async {
