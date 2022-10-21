@@ -143,7 +143,8 @@ class _CreateGroupState extends State<CreateGroup> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Provider.of<GroupsChangeNotifier>(context, listen: false).createGroup(grpNameTxtCtrl.text, dscrpTxtCtrl.text, urlTxtCtrl.text);
+          Provider.of<GroupsChangeNotifier>(context, listen: false).createGroup(
+              grpNameTxtCtrl.text, dscrpTxtCtrl.text, urlTxtCtrl.text);
           Navigator.pop(context);
         },
         backgroundColor: Colors.black,
@@ -171,33 +172,38 @@ class GroupCard extends StatelessWidget {
           children: [
             Container(
               height: 200,
-            decoration: BoxDecoration(
-            image: DecorationImage(
-              fit: BoxFit.cover,
-              alignment: FractionalOffset.center,
-              image: NetworkImage(group.url),
-                )
-              ),
+              decoration: BoxDecoration(
+                  image: DecorationImage(
+                fit: BoxFit.cover,
+                alignment: FractionalOffset.center,
+                image: NetworkImage(group.url),
+              )),
             ),
-
-
-      ExpansionTile(
+            ExpansionTile(
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              title: Text(
-                group.name,
-                style: TextStyle(fontSize: 22),
+              expandedCrossAxisAlignment: CrossAxisAlignment.start,
+              title: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Text(
+                  group.name,
+                  style: TextStyle(fontSize: 22),
+                ),
               ),
-              subtitle: Text(
-                '${group.memberCount} members',
-                style: TextStyle(
-                  color: Colors.black.withOpacity(0.4),
+              subtitle: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  '${group.memberCount} members',
+                  style: TextStyle(
+                    color: Colors.black.withOpacity(0.4),
+                  ),
                 ),
               ),
               children: [
                 Padding(
                   //Description
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Text(
+                    textAlign: TextAlign.left,
                     group.description,
                     style: TextStyle(color: Colors.black.withOpacity(0.8)),
                   ),
