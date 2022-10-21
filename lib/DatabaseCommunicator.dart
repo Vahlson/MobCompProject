@@ -164,8 +164,8 @@ class GroupsChangeNotifier extends ChangeNotifier {
   //Uses transactions to change data that might get corrupted due to concurrent changes.
   //SUCH AS: editing a blot on the map.
   //It seems that a transaction can both get and post data in one go which should be CHEAPER $$$$$$ and also handles concurrency issues.
-  void createGroup(String groupName, String groupDescription) async {
-    dbCom.addGroup(groupName, groupDescription);
+  void createGroup(String groupName, String groupDescription, String url) async {
+    dbCom.addGroup(groupName, groupDescription, url);
   }
 
   void joinGroup(String groupID) async {
@@ -666,11 +666,16 @@ class DatabaseCommunicator {
   }
 
 //Create a new group on the database
-  void addGroup(String groupName, String description) async {
+  void addGroup(String groupName, String description, String url) async {
+    if(url == ""){
+     url = "https://picsum.photos/500";
+    }
+
     Map<String, dynamic> newGroupData = {
       "name": groupName,
       "description": description,
       "membercount": 0,
+      'url' : url,
     };
 
     String? gID = await _pushEntryWithUniqeGeneratedKey(groupsPath,
@@ -679,6 +684,7 @@ class DatabaseCommunicator {
     //Also create a matching blueprint for the group
     if (gID != null) {
       _createNewBlueprintOnDatabase(gID, groupName);
+      joinGroup(gID);
     }
   }
 

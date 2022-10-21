@@ -198,6 +198,7 @@ class Group {
   var name = "";
   var memberCount = 0;
   var description = "";
+  var url = "";
 
   Group(this.id, this.name, {this.description = ""});
 
@@ -206,5 +207,6 @@ class Group {
     name = data["name"];
     memberCount = data["membercount"];
     description = data["description"];
+    url = data["url"];
   }
 }

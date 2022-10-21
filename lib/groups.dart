@@ -31,7 +31,7 @@ class _JoinGroupState extends State<JoinGroup> {
   Widget build(BuildContext context) {
     return Card(
       elevation: 5,
-      margin: const EdgeInsets.fromLTRB(32, 32, 32, 16),
+      margin: const EdgeInsets.fromLTRB(24, 16, 24, 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -52,8 +52,8 @@ class _JoinGroupState extends State<JoinGroup> {
                   style: const TextStyle(fontSize: 16),
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    labelText: 'Join Group',
-                    hintText: 'Enter the group code',
+                    labelText: 'Enter a group code',
+                    //hintText: 'Enter the group code',
                   ),
                   controller: joinGroupTxtCtrl,
                 ),
@@ -62,11 +62,12 @@ class _JoinGroupState extends State<JoinGroup> {
             ElevatedButton(
                 onPressed: () {
                   setState(() {
-                    //Todo: Add join group action
                     groupID = joinGroupTxtCtrl.text;
 
                     Provider.of<GroupsChangeNotifier>(context, listen: false)
                         .joinGroup(groupID);
+
+                    joinGroupTxtCtrl.clear();
                   });
                 },
                 child: const Text("Join")),
@@ -87,41 +88,57 @@ class CreateGroup extends StatefulWidget {
 class _CreateGroupState extends State<CreateGroup> {
   TextEditingController grpNameTxtCtrl = TextEditingController();
   TextEditingController dscrpTxtCtrl = TextEditingController();
+  TextEditingController urlTxtCtrl = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Create new group')),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            FadeInImage.assetNetwork(
-                placeholder:
-                    'https://freeiconshop.com/wp-content/uploads/edd/image-outline-filled.png',
-                image: ''),
-            TextFormField(
-              controller: grpNameTxtCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Group Name:',
-                icon: Icon(Icons.groups),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: TextFormField(
+                  controller: urlTxtCtrl,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Image url',
+                    prefixIcon: Icon(Icons.image_rounded),
+                  ),
+                ),
               ),
-            ),
-            TextFormField(
-              controller: dscrpTxtCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                icon: Icon(Icons.description),
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: TextFormField(
+                  controller: grpNameTxtCtrl,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Group Name',
+                    prefixIcon: Icon(Icons.groups_rounded),
+                  ),
+                ),
               ),
-            ),
-          ],
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: TextFormField(
+                  controller: dscrpTxtCtrl,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Description',
+                    prefixIcon: Icon(Icons.description_rounded),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          //TODO Submit to database
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const MyGroupPage()),
-          );
+          Provider.of<GroupsChangeNotifier>(context, listen: false).createGroup(grpNameTxtCtrl.text, dscrpTxtCtrl.text, urlTxtCtrl.text);
+          Navigator.pop(context);
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.check),
@@ -139,16 +156,26 @@ class GroupCard extends StatelessWidget {
     return Center(
       child: Card(
         elevation: 5,
-        margin: const EdgeInsets.fromLTRB(32, 16, 32, 16),
+        margin: const EdgeInsets.all(8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
-            Image.network(
-                'https://thumbs.gfycat.com/NiftyFlusteredAstarte-size_restricted.gif'),
-            ExpansionTile(
+            Container(
+              height: 200,
+            decoration: BoxDecoration(
+            image: DecorationImage(
+              fit: BoxFit.cover,
+              alignment: FractionalOffset.center,
+              image: NetworkImage(group.url),
+                )
+              ),
+            ),
+
+
+      ExpansionTile(
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
               title: Text(
                 group.name,
