@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'blot',
       theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
+        primarySwatch: Colors.brown,
       ),
       home: const MyHomePage(),
     );
@@ -413,8 +413,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                 decoration: const InputDecoration(
                                   border: OutlineInputBorder(),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.black)
-                                  ),
+                                      borderSide:
+                                          BorderSide(color: Colors.black)),
                                   labelText: 'Active blueprint',
                                 ),
                                 items: availableBlueprintsNotifier
@@ -440,7 +440,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 }),
                           ),
                           CheckboxListTile(
-                            activeColor: Colors.black,
+                              activeColor: Colors.black,
                               title: const Text("Show blueprint"),
                               value: activeBlueprintChangeNotifier
                                   .shouldShowBlueprint(),
@@ -515,7 +515,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     ? CustomIcons.humidity_high
                     : ((geomap.selectedOpacity == 0.5)
                         ? CustomIcons.humidity_mid
-                        : CustomIcons.humidity_low), color: Colors.black,
+                        : CustomIcons.humidity_low),
+                color: Colors.black,
               ),
               onPressed: () {
                 setState(() {

@@ -1,9 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.group2.artmap">
    <application
-        android:label="Artmap"
+        android:label="Blot"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules"
         android:usesCleartextTraffic="true"
